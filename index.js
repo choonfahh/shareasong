@@ -5,9 +5,17 @@ const Composer = require(`telegraf/composer`);
 const session = require(`telegraf/session`);
 const Stage = require(`telegraf/stage`);
 const WizardScene = require(`telegraf/scenes/wizard`);
+const { mount } = require("telegraf");
 const { enter, leave } = Stage;
 
-var queryNumber = 0;
+var queryNumber = undefined;
+var queryContext = undefined;
+var songName = undefined;
+var songArtist = undefined;
+var songExplain = undefined;
+var songDedicate = undefined;
+var submitRecommend = {};
+
 var pendingSession = undefined;
 var subscribeStatus = true;
 
@@ -30,6 +38,7 @@ function request(ctx) {
 // User indicates to start recommendProcess
 function create(ctx) {
   queryNumber = ctx.callbackQuery.message.message_id;
+  queryContext = ctx.callbackQuery.message.text;
   subscribeStatus = true;
   return (
     console.log(subscribeStatus),
@@ -77,6 +86,7 @@ function select(ctx) {
 
 // User explain song for recommendProcess
 function explain(ctx) {
+  songName = ctx.message.text;
   return (
     console.log(`User explaining why`),
     ctx.reply(`Why do you recommend this song?`),
@@ -86,6 +96,7 @@ function explain(ctx) {
 
 // User dedicates song for recommendProcess
 function dedicate(ctx) {
+  songExplain = ctx.message.text;
   return (
     console.log(`User dedicating song`),
     ctx.reply(`Any message for the user? If you don't have any, type 'no'.`),
@@ -98,7 +109,17 @@ function deliver(ctx) {
   let responseTime = 1000 * 60 * 7; // User receives validation response after 7 mins
   let newRequest = 1000 * 60 * 60 * 1; // User receives new request after 1 hour
   pendingSession = undefined;
+  songDedicate = ctx.message.text;
+  submitRecommend = {
+    'request-number': queryNumber,
+    'request-context': queryContext,
+    'song-name': songName,
+    'song-artist': songArtist,
+    'song-reason': songExplain,
+    'song-message': songDedicate
+  }
   return (
+    console.log(submitRecommend),
     console.log(`Delivered`),
     ctx.reply(`Thanks! Your recommendation has just been delivered.`),
     setTimeout(() => {
@@ -119,6 +140,7 @@ function deliver(ctx) {
 function subscribe(ctx) {
   if (subscribeStatus) {
     console.log(`User is already subscribed.`);
+    return ctx.reply(`You're already subscribed.`);
   } else {
     console.log(`Subscribing now.`);
     subscribeStatus = true;
@@ -137,24 +159,25 @@ function unsubscribe(ctx) {
     return ctx.reply(`Unsubscribed`);
   } else {
     console.log(`User is already unsubscribed.`);
+    return ctx.reply(`You're already unsubscribed.`);
   }
 }
 
 // recommendProcess scenes
 const recommendProcess = new WizardScene(
   `recommend-process`,
-  ctx => {
+  mount(`callback_query`, ctx => {
     select(ctx); // Step 1: Select Song
-  },
-  ctx => {
+  }),
+  mount(`text`, ctx => {
     explain(ctx); // Step 2: Explain Why
-  },
-  ctx => {
+  }),
+  mount(`text`, ctx => {
     dedicate(ctx); // Step 3: Dedicate Message
-  },
-  ctx => {
+  }),
+  mount(`text`, ctx => {
     deliver(ctx); // Step 4: Deliver Recommendation
-  }
+  })
 );
 
 // User cancels current input
@@ -170,8 +193,14 @@ recommendProcess.command(`unsub`, ctx => {
   unsubscribe(ctx);
 });
 
+// User restarts recommendProcess
 recommendProcess.command(`redo`, ctx => {
   redo(ctx);
+});
+
+// User can only subscribe without any existing process; this function prevents wizard from moving forward
+recommendProcess.command(`sub`, ctx => {
+  subscribe(ctx);
 });
 
 let sessionMax = 60 * 5; // recommendProcess lasts for 5 minutes max.
@@ -179,6 +208,8 @@ const stage = new Stage([recommendProcess], { ttl: sessionMax });
 const config = require(`./config.json`);
 const bot = new Telegraf(config.token);
 var queryNumber = 0;
+
+//bot.use(Telegraf.log())
 
 bot.use(session());
 bot.use(stage.middleware());
@@ -188,7 +219,6 @@ bot.start(ctx => {
   request(ctx);
 });
 
-// WIP
 // User can only subscribe without any existing process
 bot.command(`sub`, ctx => {
   subscribe(ctx);
@@ -199,7 +229,6 @@ bot.command(`unsub`, ctx => {
   unsubscribe(ctx);
 });
 
-// WIP
 // Redirect to start of recommendationProcess
 bot.action(`create-reply`, ctx => {
   create(ctx);
