@@ -1,3 +1,6 @@
+# Dependency directories
+node_modules/
+
 # Logs
 logs
 *.log
@@ -8,5 +11,5 @@ yarn-error.log*
 # dotenv environment variables file
 .env
 
-# Dependency directories
-node_modules/
+# Yarn Integrity file
+.yarn-integrity
