@@ -11,8 +11,12 @@ yarn-error.log*
 # Dotenv
 .env
 
-# Yarn Integrity file
+# Yarn Files
 .yarn-integrity
+yarn.lock
 
 # Reply Content
 config.json
+
+# Test files
+test.js
