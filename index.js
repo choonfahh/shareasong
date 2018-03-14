@@ -5,6 +5,7 @@ const Composer = require(`telegraf/composer`);
 const session = require(`telegraf/session`);
 const Stage = require(`telegraf/stage`);
 const WizardScene = require(`telegraf/scenes/wizard`);
+const Scene = require("telegraf/scenes/base");
 const { mount } = require("telegraf");
 const { enter, leave } = Stage;
 
@@ -18,6 +19,7 @@ var submitRecommend = {};
 
 var pendingSession = undefined;
 var subscribeStatus = true;
+var waitingList = false;
 
 // Request ping to user
 function request(ctx) {
@@ -111,13 +113,13 @@ function deliver(ctx) {
   pendingSession = undefined;
   songDedicate = ctx.message.text;
   submitRecommend = {
-    'request-number': queryNumber,
-    'request-context': queryContext,
-    'song-name': songName,
-    'song-artist': songArtist,
-    'song-reason': songExplain,
-    'song-message': songDedicate
-  }
+    "request-number": queryNumber,
+    "request-context": queryContext,
+    "song-name": songName,
+    "song-artist": songArtist,
+    "song-reason": songExplain,
+    "song-message": songDedicate
+  };
   return (
     console.log(submitRecommend),
     console.log(`Delivered`),
@@ -203,8 +205,45 @@ recommendProcess.command(`sub`, ctx => {
   subscribe(ctx);
 });
 
+const askProcess = new Scene(`ask-process`);
+
+askProcess.enter(ctx =>
+  ctx.reply(
+    `Currently still in testing. Do you want to join waiting list? If yes, /join. No, /no`
+  )
+);
+
+askProcess.leave(() => {
+  if (waitingList) {
+    console.log(`User is on the waiting list.`);
+  } else {
+    console.log(`User is not on the waiting list.`);
+  }
+});
+
+askProcess.command(`join`, ctx => {
+  if (waitingList) {
+    return ctx.reply(`You've alr indicated your interest!`), ctx.scene.leave();
+  } else {
+    waitingList = true;
+    return (
+      ctx.reply(`You've indicated your interest! We'll notify you`),
+      ctx.scene.leave()
+    );
+  }
+});
+
+askProcess.command(`no`, ctx => {
+  waitingList = false;
+  return ctx.reply(`Ok`), ctx.scene.leave();
+});
+
+askProcess.on(`message`, ctx => {
+  return ctx.reply(`Please reply /join or /no`);
+});
+
 let sessionMax = 60 * 5; // recommendProcess lasts for 5 minutes max.
-const stage = new Stage([recommendProcess], { ttl: sessionMax });
+const stage = new Stage([recommendProcess, askProcess], { ttl: sessionMax });
 const config = require(`./config.json`);
 const bot = new Telegraf(config.token);
 var queryNumber = 0;
@@ -218,6 +257,8 @@ bot.use(stage.middleware());
 bot.start(ctx => {
   request(ctx);
 });
+
+bot.command(`ask`, enter(`ask-process`));
 
 // User can only subscribe without any existing process
 bot.command(`sub`, ctx => {
