@@ -1,4 +1,4 @@
-require('dotenv').config()
+require("dotenv").config();
 
 const Telegraf = require(`telegraf`);
 const Markup = require(`telegraf/markup`);
@@ -10,6 +10,8 @@ const WizardScene = require(`telegraf/scenes/wizard`);
 const Scene = require("telegraf/scenes/base");
 const { mount } = require("telegraf");
 const { enter, leave } = Stage;
+const config = require(`./config.json`);
+const msg = config.reply;
 
 var queryNumber = undefined;
 var queryContext = undefined;
@@ -33,7 +35,7 @@ function request(ctx) {
       return ctx.replyWithHTML(
         `Story of question.\n\n<b>Would you like to recommend a song?</b>`,
         Markup.inlineKeyboard([
-          Markup.callbackButton(`Yes, I have a song in mind!`, `create-reply`)
+          Markup.callbackButton(msg.recommend.intent, `create-reply`)
         ]).extra()
       );
     });
@@ -45,32 +47,21 @@ function create(ctx) {
   queryContext = ctx.callbackQuery.message.text;
   subscribeStatus = true;
   return (
-    console.log(subscribeStatus),
-    ctx.answerCbQuery(
-      `Great, let's answer the following questions to submit it!`
-    ),
+    ctx.answerCbQuery(msg.recommend.create),
     ctx.scene.enter(`recommend-process`)
   );
 }
 
 // User cancels recommendProcess
 function cancel(ctx) {
-  return (
-    ctx.scene.leave(),
-    console.log(`Recommendation cancelled.`),
-    ctx.reply(`Your recommendation has been cancelled.`)
-  );
+  return ctx.scene.leave(), ctx.reply(msg.recommend.cancel);
 }
 
 // User redo recommendProcess
 function redo(ctx) {
   return (
     ctx.wizard.selectStep(1),
-    console.log(`User selecting song`),
-    ctx.reply(
-      `What song would you like to recommend?`,
-      Extra.inReplyTo(queryNumber)
-    )
+    ctx.reply(msg.recommend.select, Extra.inReplyTo(queryNumber))
   );
 }
 
@@ -78,34 +69,23 @@ function redo(ctx) {
 function select(ctx) {
   pendingSession = ctx.scene.session.current;
   return (
-    console.log(`User selecting song`),
-    console.log(pendingSession),
-    ctx.reply(
-      `What song would you like to recommend?`,
-      Extra.inReplyTo(queryNumber)
-    ),
+    ctx.reply(msg.recommend.select, Extra.inReplyTo(queryNumber)),
     ctx.wizard.next()
   );
 }
 
 // User explain song for recommendProcess
 function explain(ctx) {
-  songName = ctx.message.text;
-  return (
-    console.log(`User explaining why`),
-    ctx.reply(`Why do you recommend this song?`),
-    ctx.wizard.next()
-  );
+  let songRaw = ctx.message.text;
+  songName = songRaw.split("-")[0];
+  songArtist = songRaw.split("-")[1];
+  return ctx.reply(msg.recommend.explain), ctx.wizard.next();
 }
 
 // User dedicates song for recommendProcess
 function dedicate(ctx) {
   songExplain = ctx.message.text;
-  return (
-    console.log(`User dedicating song`),
-    ctx.reply(`Any message for the user? If you don't have any, type 'no'.`),
-    ctx.wizard.next()
-  );
+  return ctx.reply(msg.recommend.dedicate), ctx.wizard.next();
 }
 
 // recommendProcess completed, recommendation delivered
@@ -124,14 +104,9 @@ function deliver(ctx) {
   };
   return (
     console.log(songSubmit),
-    console.log(`Delivered`),
-    ctx.reply(`Thanks! Your recommendation has just been delivered.`),
+    ctx.reply(msg.recommend.deliver),
     setTimeout(() => {
-      return ctx
-        .reply(`Anne really loved your recommendation!`) // Need to calibrate response
-        .then(() => {
-          return console.log(`Received reply from recipient`);
-        });
+      return ctx.reply(`Anne really loved your recommendation!`);
     }, responseTime),
     setTimeout(() => {
       request(ctx);
@@ -143,13 +118,10 @@ function deliver(ctx) {
 // User subs to request pings; sub on by default
 function subscribe(ctx) {
   if (subscribeStatus) {
-    console.log(`User is already subscribed.`);
-    return ctx.reply(`You're already subscribed.`);
+    return ctx.reply(msg.recommend.subExist);
   } else {
-    console.log(`Subscribing now.`);
     subscribeStatus = true;
-    console.log(subscribeStatus);
-    return ctx.reply(`Subscribed!`);
+    return ctx.reply(msg.recommend.sub);
   }
 }
 
@@ -157,13 +129,10 @@ function subscribe(ctx) {
 // User unsubs to request pings
 function unsubscribe(ctx) {
   if (subscribeStatus) {
-    console.log(`Unsubscribing now.`);
     subscribeStatus = false;
-    console.log(subscribeStatus);
-    return ctx.reply(`Unsubscribed`);
+    return ctx.reply(msg.recommend.unsub);
   } else {
-    console.log(`User is already unsubscribed.`);
-    return ctx.reply(`You're already unsubscribed.`);
+    return ctx.reply(msg.recommend.unsubExist);
   }
 }
 
@@ -210,43 +179,27 @@ recommendProcess.command(`sub`, ctx => {
 const askProcess = new Scene(`ask-process`);
 
 // User prompted to join waiting list to ask for music
-askProcess.enter(ctx =>
-  ctx.reply(
-    `Currently still in testing. Do you want to join waiting list? If yes, /join. No, /no`
-  )
-);
-
-// User leaves the asking process
-askProcess.leave(() => {
-  if (waitingList) {
-    console.log(`User is on the waiting list.`);
-  } else {
-    console.log(`User is not on the waiting list.`);
-  }
-});
+askProcess.enter(ctx => ctx.reply(msg.ask.intent));
 
 // User indicates to join the waiting list
 askProcess.command(`join`, ctx => {
   if (waitingList) {
-    return ctx.reply(`You've alr indicated your interest!`), ctx.scene.leave();
+    return ctx.reply(msg.ask.joinExist), ctx.scene.leave();
   } else {
     waitingList = true;
-    return (
-      ctx.reply(`You've indicated your interest! We'll notify you`),
-      ctx.scene.leave()
-    );
+    return ctx.reply(msg.ask.join), ctx.scene.leave();
   }
 });
 
 // User declines to join the waiting list
 askProcess.command(`no`, ctx => {
   waitingList = false;
-  return ctx.reply(`Ok`), ctx.scene.leave();
+  return ctx.reply(msg.ask.decline), ctx.scene.leave();
 });
 
 // Only accepts two commands inside the process
 askProcess.on(`message`, ctx => {
-  return ctx.reply(`Please reply /join or /no`);
+  return ctx.reply(msg.ask.default);
 });
 
 let sessionMax = 60 * 5; // recommendProcess lasts for 5 minutes max.
@@ -286,11 +239,9 @@ bot.action(`create-reply`, ctx => {
 bot.on(`message`, ctx => {
   if (pendingSession !== ctx.scene.session.current) {
     pendingSession = undefined;
-    return ctx.reply(
-      `Session Timeout. Click on one of the stories to start recommending!`
-    );
+    return ctx.reply(msg.basic.timeout);
   } else {
-    return ctx.reply(`User has not entered recommendationProcess`);
+    return ctx.reply(msg.basic.default);
   }
 });
 

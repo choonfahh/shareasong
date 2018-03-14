@@ -8,8 +8,11 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# dotenv environment variables file
+# Dotenv
 .env
 
 # Yarn Integrity file
 .yarn-integrity
+
+# Reply Content
+config.json
