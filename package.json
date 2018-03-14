@@ -5,6 +5,7 @@
   "author": "Fah",
   "license": "MIT",
   "dependencies": {
+    "dotenv": "^5.0.1",
     "telegraf": "^3.19.0"
   },
   "scripts": {
