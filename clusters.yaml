@@ -3,5 +3,5 @@
     configmap: controller-conf
     namespace: hasura
   data: null
-  kubeContext: amplifier63
-  name: amplifier63
+  kubeContext: bountiful81
+  name: bountiful81
