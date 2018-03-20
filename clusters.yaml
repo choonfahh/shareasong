@@ -3,5 +3,5 @@
     configmap: controller-conf
     namespace: hasura
   data: null
-  kubeContext: bountiful81
-  name: bountiful81
+  kubeContext: avocado32
+  name: avocado32
