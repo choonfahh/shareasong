@@ -13,13 +13,6 @@ const { enter, leave } = Stage;
 const config = require(`./config.json`);
 const msg = config.reply;
 
-const express = require('express')
-const app = express()
-
-app.get('/', (req, res) => res.send('Telegram Bot WIP!'))
-
-app.listen(8080, () => console.log('App listening on port 8080!'))
-
 var queryNumber = undefined;
 var queryContext = undefined;
 var songName = undefined;
