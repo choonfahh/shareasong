@@ -8,9 +8,6 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Dotenv
-.env
-
 # Yarn Files
 .yarn-integrity
 yarn.lock

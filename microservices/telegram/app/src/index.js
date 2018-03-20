@@ -207,3 +207,48 @@ askProcess.command(`no`, ctx => {
 askProcess.on(`message`, ctx => {
   return ctx.reply(msg.ask.default);
 });
+
+let sessionMax = 60 * 5; // recommendProcess lasts for 5 minutes max.
+const stage = new Stage([recommendProcess, askProcess], { ttl: sessionMax });
+const bot = new Telegraf(process.env.BOT_TOKEN);
+var queryNumber = 0;
+
+// bot.use(Telegraf.log())
+
+bot.use(session());
+bot.use(stage.middleware());
+
+// Upon bot start
+bot.start(ctx => {
+  request(ctx);
+});
+
+// User enters the asking process
+bot.command(`ask`, enter(`ask-process`));
+
+// User can only subscribe without any existing process
+bot.command(`sub`, ctx => {
+  subscribe(ctx);
+});
+
+// User can also unsub outside of recommendProcess
+bot.command(`unsub`, ctx => {
+  unsubscribe(ctx);
+});
+
+// Redirect to start of recommendationProcess
+bot.action(`create-reply`, ctx => {
+  create(ctx);
+});
+
+// No running processes in the bot
+bot.on(`message`, ctx => {
+  if (pendingSession !== ctx.scene.session.current) {
+    pendingSession = undefined;
+    return ctx.reply(msg.basic.timeout);
+  } else {
+    return ctx.reply(msg.basic.default);
+  }
+});
+
+bot.startPolling();
