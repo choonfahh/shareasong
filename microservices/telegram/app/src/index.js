@@ -1,6 +1,6 @@
-const express = require('express');
-const app = express();
 const Telegraf = require(`telegraf`);
+const express = require("express");
+const app = express();
 const Markup = require(`telegraf/markup`);
 const Extra = require(`telegraf/extra`);
 const Composer = require(`telegraf/composer`);
@@ -24,10 +24,6 @@ var songSubmit = {};
 var pendingSession = undefined;
 var subscribeStatus = true;
 var waitingList = false;
-
-app.get('/', (req, res) => res.send('Share A Song Telegram Bot'))
-
-app.listen(8080, () => console.log('App listening on port 8080!'))
 
 // Request ping to user
 function request(ctx) {
@@ -208,10 +204,17 @@ askProcess.on(`message`, ctx => {
 
 let sessionMax = 60 * 5; // recommendProcess lasts for 5 minutes max.
 const stage = new Stage([recommendProcess, askProcess], { ttl: sessionMax });
-const bot = new Telegraf(process.env.TELEGRAM_API);
+const bot = new Telegraf(config.api); // replace during pdt process.env.TELEGRAM_API
 var queryNumber = 0;
 
 // bot.use(Telegraf.log())
+
+app.use(bot.webhookCallback("/"));
+bot.telegram.setWebhook("https://server.tld:8443");
+app.get("/", (req, res) => {
+  res.send("Share A Song Telegram Bot");
+});
+app.listen(8080, () => console.log("App listening on port 8080!"));
 
 bot.use(session());
 bot.use(stage.middleware());
