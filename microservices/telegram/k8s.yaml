@@ -20,6 +20,12 @@ items:
       spec:
         containers:
         - image: hasura/base-git-image:0.7
+          env:
+            - name: TELEGRAM_API
+              valueFrom:
+                  secretKeyRef:
+                    key: bot.telegram_api.key
+                    name: hasura-secrets
           imagePullPolicy: IfNotPresent
           name: '{{ microservice.name }}'
           ports:
