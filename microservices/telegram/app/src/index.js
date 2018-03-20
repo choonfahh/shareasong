@@ -208,7 +208,7 @@ askProcess.on(`message`, ctx => {
 
 let sessionMax = 60 * 5; // recommendProcess lasts for 5 minutes max.
 const stage = new Stage([recommendProcess, askProcess], { ttl: sessionMax });
-const bot = new Telegraf(process.env.TELEGRAM_BOT_API);
+const bot = new Telegraf(process.env.BOT_TOKEN);
 var queryNumber = 0;
 
 // bot.use(Telegraf.log())
