@@ -1,4 +1,4 @@
-FROM mhart/alpine-node:7.6.0
+FROM mhart/alpine-node:8
 
 WORKDIR /src
 
@@ -11,4 +11,4 @@ RUN npm install
 #Add the source code
 ADD app/src /src
 
-CMD ["node", "server.js"]
+CMD ["node", "index.js"]

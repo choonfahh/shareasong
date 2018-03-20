@@ -1,5 +1,5 @@
-description: Blank template for a Hasura project
-keywords: base, getting-started
+description: Share A Song
+keywords: telegram, bot
 media: {}
-name: base
+name: shareasong
 platformVersion: v0.15.23
