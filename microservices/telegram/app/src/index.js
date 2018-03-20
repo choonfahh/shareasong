@@ -1,5 +1,5 @@
-const express = require('express')
-const app = express()
+const express = require('express');
+const app = express();
 const Telegraf = require(`telegraf`);
 const Markup = require(`telegraf/markup`);
 const Extra = require(`telegraf/extra`);
