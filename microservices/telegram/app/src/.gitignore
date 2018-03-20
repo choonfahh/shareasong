@@ -15,8 +15,6 @@ yarn-error.log*
 .yarn-integrity
 yarn.lock
 
-# Reply Content
-config.json
 
 # Test files
 test.js

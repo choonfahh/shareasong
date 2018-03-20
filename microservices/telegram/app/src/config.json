@@ -1,0 +1,28 @@
+{
+  "reply": {
+    "recommend": {
+      "intent": "Yes, I have a song in mind!",
+      "start": "Great, let's answer the following questions to submit it!",
+      "cancel": "Your recommendation has been cancelled.",
+      "select": "What song would you like to recommend? Song Name - Artist",
+      "explain": "Why do you recommend this song?",
+      "dedicate": "Any message for the user? If you don't have any, type 'no'.",
+      "deliver": "Thanks! Your recommendation has just been delivered.",
+      "sub": "Subscribed!",
+      "subExist": "You're already subscribed.",
+      "unsub": "Unsubscribed",
+      "unsubExist": "User is already unsubscribed."
+    },
+    "ask": {
+      "intent": "Currently still in testing. Do you want to join waiting list? If yes, /join. No, /no",
+      "join": "You've indicated your interest! We'll notify you",
+      "joinExist": "You've alr indicated your interest!",
+      "decline": "Okay",
+      "default": "Please reply /join or /no"
+    },
+    "basic": {
+      "timeout": "Session Timeout. Click on one of the stories to start recommending!",
+      "default": "User has not entered recommendationProcess"
+    }
+  }
+}
