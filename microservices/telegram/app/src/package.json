@@ -10,7 +10,7 @@
     "telegraf": "^3.19.0"
   },
   "scripts": {
-    "start": "node index.js",
+    "start": "node test.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   }
 }
