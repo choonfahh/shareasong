@@ -11,4 +11,4 @@ RUN npm install
 #Add the source code
 ADD app/src /src
 
-CMD ["node", "server.js"]
+CMD ["node", "test.js"]
