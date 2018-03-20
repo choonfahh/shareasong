@@ -10,8 +10,6 @@ const WizardScene = require(`telegraf/scenes/wizard`);
 const Scene = require("telegraf/scenes/base");
 const { mount } = require("telegraf");
 const { enter, leave } = Stage;
-const config = require(`./config.json`);
-const msg = config.reply;
 
 var queryNumber = undefined;
 var queryContext = undefined;
