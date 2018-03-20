@@ -10,6 +10,20 @@ const WizardScene = require(`telegraf/scenes/wizard`);
 const Scene = require("telegraf/scenes/base");
 const { mount } = require("telegraf");
 const { enter, leave } = Stage;
+const config = require(`./config.json`);
+const msg = config.reply;
+
+var queryNumber = undefined;
+var queryContext = undefined;
+var songName = undefined;
+var songArtist = undefined;
+var songExplain = undefined;
+var songDedicate = undefined;
+var songSubmit = {};
+
+var pendingSession = undefined;
+var subscribeStatus = true;
+var waitingList = false;
 
 app.get('/', (req, res) => res.send('Share A Song Telegram Bot'))
 
