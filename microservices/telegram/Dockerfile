@@ -6,7 +6,7 @@ WORKDIR /src
 ADD app/src/package.json /src/package.json
 
 #install node modules
-RUN npm install
+RUN yarn install
 
 #Add the source code
 ADD app/src /src
