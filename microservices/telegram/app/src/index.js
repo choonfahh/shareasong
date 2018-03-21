@@ -211,10 +211,10 @@ var queryNumber = 0;
 
 //app.use(bot.webhookCallback("/"));
 //bot.telegram.setWebhook("https://server.tld:8443");
-//app.get("/", (req, res) => {
-//  res.send("Share A Song Telegram Bot");
-//});
-//app.listen(8080, () => console.log("App listening on port 8080!"));
+app.get("/", (req, res) => {
+  res.send("Share A Song Telegram Bot");
+});
+app.listen(8080, () => console.log("App listening on port 8080!"));
 
 bot.use(session());
 bot.use(stage.middleware());
