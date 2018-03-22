@@ -207,8 +207,8 @@ const server = express();
 const bot = new Telegraf(process.env.TELEGRAM_API); // replace during pdt process.env.TELEGRAM_API
 var queryNumber = 0;
 
-server.use(bot.webhookCallback(`/${process.env.TELEGRAM_WEBHOOK_PATH}`))
-bot.telegram.setWebhook(`${process.env.TELEGRAM_WEBHOOK_URL}${process.env.TELEGRAM_WEBHOOK_PATH}`)
+server.use(bot.webhookCallback('/'+'secret-path'))
+bot.telegram.setWebhook(process.env.TELEGRAM_WEBHOOK_URL+'secret-path')
 
 server.get('/', (req, res) => {
   res.send('Hello World!')
