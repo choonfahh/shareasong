@@ -1,5 +1,5 @@
 const Telegraf = require(`telegraf`);
-const express = require("express");
+const express = require(`express`);
 const Markup = require(`telegraf/markup`);
 const Extra = require(`telegraf/extra`);
 const Composer = require(`telegraf/composer`);
@@ -10,6 +10,7 @@ const Scene = require("telegraf/scenes/base");
 const { mount } = require("telegraf");
 const { enter, leave } = Stage;
 const config = require(`./config.json`);
+const dev = require(`./development.json`);
 const msg = config.reply;
 
 var queryNumber = undefined;
@@ -202,21 +203,23 @@ askProcess.on(`message`, ctx => {
 });
 
 let sessionMax = 60 * 5; // recommendProcess lasts for 5 minutes max.
-const stage = new Stage([recommendProcess, askProcess], { ttl: sessionMax });
 const server = express();
-const bot = new Telegraf(process.env.TELEGRAM_API); // replace during pdt process.env.TELEGRAM_API
+const stage = new Stage([recommendProcess, askProcess], { ttl: sessionMax });
+const bot = new Telegraf(process.env.TELEGRAM_API); // for dev, use dev.Api
 var queryNumber = 0;
 
-server.use(bot.webhookCallback('/' + process.env.TELEGRAM_WEBHOOK_PATH))
-bot.telegram.setWebhook(process.env.TELEGRAM_WEBHOOK_URL + process.env.TELEGRAM_WEBHOOK_PATH)
+// Creation of server at port 8080
+server.listen(8080);
 
-server.get('/', (req, res) => {
-  res.send('Share A Song Bot')
-})
+server.get("/", (req, res) => {
+  res.send("Share A Song Bot");
+});
 
-server.listen(8080, () => {
-  console.log('Listening to port 8080')
-})
+// Creation of bot webhook to initiate
+server.use(bot.webhookCallback("/" + process.env.TELEGRAM_WEBHOOK_PATH));
+bot.telegram.setWebhook(
+  process.env.TELEGRAM_WEBHOOK_URL + process.env.TELEGRAM_WEBHOOK_PATH
+);
 
 bot.use(session());
 bot.use(stage.middleware());

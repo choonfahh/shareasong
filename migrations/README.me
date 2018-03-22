@@ -1,0 +1,35 @@
+Data:
+    User:
+      - id
+      - name (first name)
+      - platform (telegram, fb*)
+      - platform_id (if telegram, telegram user_id; if fb, fb user_id)
+      - chat_id*
+      - date_joined (date first joined)
+      - last_active (date when user sent a response/recommendation)
+      - last_interaction (date when bot sent a message to user)
+      - requests (# of requests sent)
+      - recommendations (# of recommendations sent)
+    Request:
+      - id
+      - user_id
+      - content (of question)
+      - date_created
+      - delivered (# of users who received request)
+      - replied (# of users who replied to request)
+      *need to identify who receive the request
+    Artist:
+      - id
+      - name
+    Song:
+      - id
+      - title
+      - artist_id
+    Recommendation:
+      - id
+      - user_id
+      - request_id
+      - song_id
+      - explanation (why the song is recommended?)
+      - dedication (personal message for the recipient)
+      - date_created
