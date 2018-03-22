@@ -31,6 +31,11 @@ items:
                   secretKeyRef:
                     key: bot.telegram_webhook.url
                     name: hasura-secrets
+            - name: TELEGRAM_WEBHOOK_PATH
+              valueFrom:
+                  secretKeyRef:
+                    key: bot.telegram_webhook.path
+                    name: hasura-secrets
           imagePullPolicy: IfNotPresent
           name: '{{ microservice.name }}'
           ports:
