@@ -204,14 +204,14 @@ askProcess.on(`message`, ctx => {
 let sessionMax = 60 * 5; // recommendProcess lasts for 5 minutes max.
 const stage = new Stage([recommendProcess, askProcess], { ttl: sessionMax });
 const server = express();
-const bot = new Telegraf(config.api); // replace during pdt process.env.TELEGRAM_API
+const bot = new Telegraf(process.env.TELEGRAM_API); // replace during pdt process.env.TELEGRAM_API
 var queryNumber = 0;
 
-server.use(bot.webhookCallback('/secret-path'))
-bot.telegram.setWebhook('https://telegram.avocado32.hasura-app.io/secret-path')
+server.use(bot.webhookCallback('/' + process.env.TELEGRAM_API))
+bot.telegram.setWebhook(process.env.TELEGRAM_WEBHOOK_URL + process.env.TELEGRAM_API)
 
 server.get('/', (req, res) => {
-  res.send('Hello World!')
+  res.send('Set up secrets for webhook too.')
 })
 
 server.listen(8080, () => {
