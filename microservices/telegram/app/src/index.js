@@ -211,7 +211,7 @@ server.use(bot.webhookCallback('/' + process.env.TELEGRAM_WEBHOOK_PATH))
 bot.telegram.setWebhook(process.env.TELEGRAM_WEBHOOK_URL + process.env.TELEGRAM_WEBHOOK_PATH)
 
 server.get('/', (req, res) => {
-  res.send('fish fish fish')
+  res.send('no wtf')
 })
 
 server.listen(8080, () => {
