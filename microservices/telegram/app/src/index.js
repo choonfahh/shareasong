@@ -1,6 +1,5 @@
 const Telegraf = require(`telegraf`);
 const express = require("express");
-const app = express();
 const Markup = require(`telegraf/markup`);
 const Extra = require(`telegraf/extra`);
 const Composer = require(`telegraf/composer`);
@@ -204,17 +203,20 @@ askProcess.on(`message`, ctx => {
 
 let sessionMax = 60 * 5; // recommendProcess lasts for 5 minutes max.
 const stage = new Stage([recommendProcess, askProcess], { ttl: sessionMax });
-const bot = new Telegraf(process.env.TELEGRAM_API); // replace during pdt process.env.TELEGRAM_API
+const server = express();
+const bot = new Telegraf(config.api); // replace during pdt process.env.TELEGRAM_API
 var queryNumber = 0;
 
-// bot.use(Telegraf.log())
+server.use(bot.webhookCallback('/secret-path'))
+bot.telegram.setWebhook('https://telegram.avocado32.hasura-app.io/secret-path')
 
-app.use(bot.webhookCallback("/"));
-bot.telegram.setWebhook("https://server.tld:8443");
-app.get("/", (req, res) => {
-  res.send("Bot is not connected to webhook - 11:29");
-});
-app.listen(8080, () => console.log("App listening on port 8080!"));
+server.get('/', (req, res) => {
+  res.send('Hello World!')
+})
+
+server.listen(8080, () => {
+  console.log('Example app listening on port 8080!')
+})
 
 bot.use(session());
 bot.use(stage.middleware());
