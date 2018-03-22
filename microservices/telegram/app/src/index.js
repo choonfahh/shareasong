@@ -207,16 +207,16 @@ const server = express();
 const bot = new Telegraf(process.env.TELEGRAM_API); // replace during pdt process.env.TELEGRAM_API
 var queryNumber = 0;
 
-//server.use(bot.webhookCallback('/' + process.env.TELEGRAM_WEBHOOK_PATH))
-//bot.telegram.setWebhook(process.env.TELEGRAM_WEBHOOK_URL + process.env.TELEGRAM_WEBHOOK_PATH)
+server.use(bot.webhookCallback('/' + process.env.TELEGRAM_WEBHOOK_PATH))
+bot.telegram.setWebhook(process.env.TELEGRAM_WEBHOOK_URL + process.env.TELEGRAM_WEBHOOK_PATH)
 
-//server.get('/', (req, res) => {
-//  res.send('no wtf')
-//})
+server.get('/', (req, res) => {
+  res.send('Share A Song Bot')
+})
 
-//server.listen(8080, () => {
-//  console.log('Example app listening on port 8080!')
-//})
+server.listen(8080, () => {
+  console.log('Listening to port 8080')
+})
 
 bot.use(session());
 bot.use(stage.middleware());
