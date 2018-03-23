@@ -1,0 +1,15 @@
+- args:
+    name: bot_user
+  type: add_existing_table_or_view
+- args:
+    name: artist
+  type: add_existing_table_or_view
+- args:
+    name: request
+  type: add_existing_table_or_view
+- args:
+    name: song
+  type: add_existing_table_or_view
+- args:
+    name: recommendation
+  type: add_existing_table_or_view

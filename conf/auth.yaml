@@ -119,7 +119,7 @@ mobilePassword:
 # Configuration for password
 password:
   # minimum length of the password allowed.
-  minLength: "8"
+  minLength: "0"
 
 # Below fields are all optional
 #
