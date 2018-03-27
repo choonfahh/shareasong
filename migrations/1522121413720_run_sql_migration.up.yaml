@@ -1,7 +1,7 @@
 - args:
     sql: |
       CREATE TABLE bot_user (
-          id INTEGER NOT NULL PRIMARY KEY,
+          id SERIAL NOT NULL PRIMARY KEY,
           telegram_id INTEGER NOT NULL,
           first_name TEXT NULL,
           last_name TEXT NULL,
