@@ -1,0 +1,18 @@
+- args:
+    permission:
+      columns:
+      - telegram_id
+      - first_name
+      - last_name
+      - id
+      - subscribe_status
+      - waiting_list
+      - request_count
+      - recommendation_count
+      - date_joined
+      - last_interaction
+      - last_active
+      filter: {}
+    role: anonymous
+    table: bot_user
+  type: create_update_permission
