@@ -1,0 +1,13 @@
+- args:
+    permission:
+      columns:
+      - content
+      - date_created
+      - id
+      - delivered
+      - replied
+      - user_id
+      filter: {}
+    role: anonymous
+    table: request
+  type: create_update_permission

@@ -1,0 +1,15 @@
+- args:
+    permission:
+      columns:
+      - id
+      - request_id
+      - song
+      - artist
+      - explanation
+      - dedication
+      - date_created
+      - user_id
+      filter: {}
+    role: anonymous
+    table: recommendation
+  type: create_update_permission

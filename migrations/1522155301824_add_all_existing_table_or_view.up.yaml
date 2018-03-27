@@ -1,0 +1,9 @@
+- args:
+    name: bot_user
+  type: add_existing_table_or_view
+- args:
+    name: request
+  type: add_existing_table_or_view
+- args:
+    name: recommendation
+  type: add_existing_table_or_view

@@ -1,0 +1,6 @@
+- args:
+    name: request
+    table: recommendation
+    using:
+      foreign_key_constraint_on: request_id
+  type: create_object_relationship

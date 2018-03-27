@@ -1,0 +1,8 @@
+- args:
+    name: recommendations
+    table: request
+    using:
+      foreign_key_constraint_on:
+        column: request_id
+        table: recommendation
+  type: create_array_relationship
