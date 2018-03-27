@@ -1,8 +1,0 @@
-- args:
-    name: request_details
-    table: bot_user
-    using:
-      foreign_key_constraint_on:
-        column: user_id
-        table: request
-  type: create_array_relationship
