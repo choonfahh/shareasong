@@ -1,5 +1,6 @@
 const Telegraf = require(`telegraf`);
 const express = require(`express`);
+const fetch = require(`node-fetch`);
 const Markup = require(`telegraf/markup`);
 const Extra = require(`telegraf/extra`);
 const Composer = require(`telegraf/composer`);
@@ -11,7 +12,6 @@ const { mount } = require("telegraf");
 const { enter, leave } = Stage;
 const config = require(`./config.json`);
 const msg = config.reply;
-// const dev = require(`./development.json`);
 
 // Temporal storage of JSON variables - strictly synchronous
 var queryNumber = undefined;
@@ -26,6 +26,78 @@ var songSubmit = {};
 this.pendingSession = undefined;
 this.subscribeStatus = true;
 this.waitingList = false;
+
+// JSON API request options
+const requestOptions = {
+    "method": "POST",
+    "headers": {
+        "Content-Type": "application/json"
+    }
+};
+
+// Send API request to create new user inside bot_user
+function createUser(ctx) {
+  let body = {
+    "type": "insert",
+    "args": {
+        "table": "bot_user",
+        "objects": [
+            {
+                "telegram_id": ctx.message.chat.id,
+                "first_name": ctx.message.chat.first_name,
+                "last_name": ctx.message.chat.last_name
+            }
+        ]
+    }
+};
+
+  requestOptions.body = JSON.stringify(body)
+  fetch("https://data.avocado32.hasura-app.io/v1/query", requestOptions)
+  .then((response) => {
+    return response.json();
+  })
+  .then((result) => {
+    console.log(`User created!`)
+  })
+  .catch((error) => {
+    console.log(`Request Failed: ${error}`);
+  });
+}
+
+// Send API request to check whether user exists
+function checkUser(ctx) {
+  let body = {
+      "type": "select",
+      "args": {
+          "table": "bot_user",
+          "columns": [
+              "id"
+          ],
+          "where": {
+              "telegram_id": {
+                  "$eq": ctx.message.chat.id
+              }
+          }
+      }
+  };
+
+  requestOptions.body = JSON.stringify(body)
+  fetch("https://data.avocado32.hasura-app.io/v1/query", requestOptions)
+  .then((response) => {
+    return response.json();
+  })
+  .then((result) => {
+    if (result[0] == undefined) {
+      console.log(`User doesn't exist`);
+      createUser(ctx);
+    } else {
+      console.log(`user_id is ${result[0].id}`)
+    }
+  })
+  .catch((error) => {
+    console.log(`Request Failed: ${error}`);
+  });
+}
 
 // Request ping to user
 function request(ctx) {
@@ -231,6 +303,7 @@ bot.use(stage.middleware());
 
 // Upon bot start
 bot.start(ctx => {
+  checkUser(ctx);
   request(ctx);
 });
 
