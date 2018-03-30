@@ -22,7 +22,8 @@
     },
     "basic": {
       "timeout": "Session Timeout. Click on one of the stories to start recommending!",
-      "default": "User has not entered recommendationProcess"
+      "default": "User has not entered recommendationProcess",
+      "start": "You've already started."
     }
   }
 }

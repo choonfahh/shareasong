@@ -14,13 +14,11 @@ const config = require(`./config.json`);
 const msg = config.reply;
 
 // Temporal storage of JSON variables - strictly synchronous
-var queryNumber = undefined;
 var queryContext = undefined;
 var songName = undefined;
 var songArtist = undefined;
 var songExplain = undefined;
 var songDedicate = undefined;
-var songSubmit = {};
 
 // User properties
 this.pendingSession = undefined;
@@ -35,19 +33,20 @@ const requestOptions = {
     }
 };
 
-// Send API request to create new user inside bot_user
-function createUser(ctx) {
+// Send API request to get last request received
+function checkLastRequest(ctx) {
   let body = {
-    "type": "insert",
+    "type": "select",
     "args": {
         "table": "bot_user",
-        "objects": [
-            {
-                "telegram_id": ctx.message.chat.id,
-                "first_name": ctx.message.chat.first_name,
-                "last_name": ctx.message.chat.last_name
+        "columns": [
+            "last_request_received"
+        ],
+        "where": {
+            "telegram_id": {
+                "$eq": ctx.message.chat.id
             }
-        ]
+        }
     }
 };
 
@@ -57,29 +56,30 @@ function createUser(ctx) {
     return response.json();
   })
   .then((result) => {
-    console.log(`User created!`)
+    let lastRequest = result[0].last_request_received;
+    getRequest(ctx, lastRequest);
   })
   .catch((error) => {
-    console.log(`Request Failed: ${error}`);
+    console.log(`checkLastRequest Failed: ${error}`);
   });
 }
 
-// Send API request to check whether user exists
-function checkUser(ctx) {
+// Send API request to get request details
+function getRequest(ctx, lastRequest) {
   let body = {
-      "type": "select",
-      "args": {
-          "table": "bot_user",
-          "columns": [
-              "id"
-          ],
-          "where": {
-              "telegram_id": {
-                  "$eq": ctx.message.chat.id
-              }
-          }
-      }
-  };
+    "type": "select",
+    "args": {
+        "table": "request",
+        "columns": [
+            "content"
+        ],
+        "where": {
+            "id": {
+                "$eq": lastRequest + 1
+            }
+        }
+    }
+};
 
   requestOptions.body = JSON.stringify(body)
   fetch("https://data.avocado32.hasura-app.io/v1/query", requestOptions)
@@ -87,38 +87,83 @@ function checkUser(ctx) {
     return response.json();
   })
   .then((result) => {
-    if (result[0] == undefined) {
-      console.log(`User doesn't exist`);
-      createUser(ctx);
-    } else {
-      console.log(`user_id is ${result[0].id}`)
-    }
+    let requestContent = result[0].content;
+    request(ctx, requestContent, lastRequest);
   })
   .catch((error) => {
-    console.log(`Request Failed: ${error}`);
+    console.log(`getRequest Failed: ${error}`);
+  });
+}
+
+// Send API request to update successful request delivery
+function deliveredRequest(ctx, lastRequest) {
+  let body = {
+    "type": "bulk",
+    "args": [
+        {
+            "type": "update",
+            "args": {
+                "table": "request",
+                "where": {
+                    "id": {
+                        "$eq": lastRequest + 1
+                    }
+                },
+                "$inc": {
+                    "delivered_count": "1"
+                }
+            }
+        },
+        {
+            "type": "update",
+            "args": {
+                "table": "bot_user",
+                "where": {
+                    "telegram_id": {
+                        "$eq": ctx.message.chat.id
+                    }
+                },
+                "$inc": {
+                    "last_request_received": "1"
+                }
+            }
+        }
+    ]
+};
+
+  requestOptions.body = JSON.stringify(body)
+  fetch("https://data.avocado32.hasura-app.io/v1/query", requestOptions)
+  .then((response) => {
+    return response.json();
+  })
+  .then((result) => {
+    return;
+  })
+  .catch((error) => {
+    console.log(`deliveredRequest Failed: ${error}`);
   });
 }
 
 // Request ping to user
-function request(ctx) {
+function request(ctx, requestContent, lastRequest) {
   return ctx
     .reply(
       `Hey ${ctx.message.chat.first_name} there's an incoming song request!`
     )
     .then(() => {
       return ctx.replyWithHTML(
-        `Story of question.\n\n<b>Would you like to recommend a song?</b>`,
+        `${requestContent}\n\n<b>Would you like to recommend a song?</b>`,
         Markup.inlineKeyboard([
           Markup.callbackButton(msg.recommend.intent, `create-reply`)
         ]).extra()
       );
-    });
+    })
+    .then(deliveredRequest(ctx, lastRequest));
 }
 
 // User indicates to start recommendProcess
 function create(ctx) {
-  queryNumber = ctx.callbackQuery.message.message_id;
-  queryContext = ctx.callbackQuery.message.text;
+  queryContext = ctx.callbackQuery.message.text.split("\n\n")[0];
   this.subscribeStatus = true;
   return (
     ctx.answerCbQuery(msg.recommend.create),
@@ -162,31 +207,214 @@ function dedicate(ctx) {
   return ctx.reply(msg.recommend.dedicate), ctx.wizard.next();
 }
 
-// recommendProcess completed, recommendation delivered
-function deliver(ctx) {
+// Send API request to get request_id and user_id
+function deliverOne(ctx) {
+  let body = {
+    "type": "bulk",
+    "args": [
+        {
+            "type": "select",
+            "args": {
+                "table": "request",
+                "columns": [
+                    "id",
+                    {
+                        "name": "user",
+                        "columns": [
+                            "first_name",
+                            "last_name"
+                        ]
+                    }
+                ],
+                "where": {
+                    "content": {
+                        "$eq": queryContext
+                    }
+                }
+            }
+        },
+        {
+            "type": "select",
+            "args": {
+                "table": "bot_user",
+                "columns": [
+                    "id"
+                ],
+                "where": {
+                    "telegram_id": {
+                        "$eq": ctx.message.chat.id
+                    }
+                }
+            }
+        }
+    ]
+};
+
+
+  requestOptions.body = JSON.stringify(body)
+  fetch("https://data.avocado32.hasura-app.io/v1/query", requestOptions)
+  .then((response) => {
+    return response.json();
+  })
+  .then((result) => {
+    let requestId = result[0][0].id
+    let recipient = result[0][0].user.first_name
+    let userId = result[1][0].id
+    deliverTwo(ctx, requestId, recipient, userId)
+  })
+  .catch((error) => {
+    console.log(`Request Failed: ${error}`);
+  });
+}
+
+// send api request to post recommendation
+function deliverTwo(ctx, requestId, recipient, userId) {
+  songDedicate = ctx.message.text;
+  let body = {
+    "type": "bulk",
+    "args": [
+        {
+            "type": "insert",
+            "args": {
+                "table": "recommendation",
+                "objects": [
+                    {
+                        "song": songName,
+                        "artist": songArtist,
+                        "request_id": requestId,
+                        "explanation": songExplain,
+                        "dedication": songDedicate,
+                        "user_id": userId
+                    }
+                ]
+            }
+        },
+        {
+            "type": "update",
+            "args": {
+                "table": "request",
+                "where": {
+                    "id": {
+                        "$eq": requestId
+                    }
+                },
+                "$inc": {
+                    "replied_count": "1"
+                }
+            }
+        },
+        {
+            "type": "update",
+            "args": {
+                "table": "bot_user",
+                "where": {
+                    "telegram_id": {
+                        "$eq": ctx.message.chat.id
+                    }
+                },
+                "$inc": {
+                    "recommendation_count": "1"
+                }
+            }
+        }
+    ]
+};
+
+  requestOptions.body = JSON.stringify(body)
+  fetch("https://data.avocado32.hasura-app.io/v1/query", requestOptions)
+  .then((response) => {
+    return response.json();
+  })
+  .then((result) => {
+    deliverThree(ctx, recipient);
+  })
+  .catch((error) => {
+    console.log(`Request Failed: ${error}`);
+  });
+}
+
+// send delivered message, validation, next request
+function deliverThree(ctx, recipient) {
   let responseTime = 1000 * 60 * 7; // User receives validation response after 7 mins
   let newRequest = 1000 * 60 * 60 * 1; // User receives new request after 1 hour
   this.pendingSession = undefined;
-  songDedicate = ctx.message.text;
-  songSubmit = {
-    "request-number": queryNumber,
-    "request-context": queryContext,
-    "song-name": songName,
-    "song-artist": songArtist,
-    "song-reason": songExplain,
-    "song-message": songDedicate
-  };
   return (
-    console.log(songSubmit),
     ctx.reply(msg.recommend.deliver),
     setTimeout(() => {
-      return ctx.reply(`Anne really loved your recommendation!`);
+      return ctx.reply(`${recipient} really loved your recommendation!`);
     }, responseTime),
     setTimeout(() => {
-      request(ctx);
+      if (this.subscribeStatus) {
+        checkLastRequest(ctx);
+      } else {
+        return;
+      }
     }, newRequest),
     ctx.scene.leave()
   );
+}
+
+// Send API request to create new user inside bot_user
+function createUser(ctx) {
+  let body = {
+    "type": "insert",
+    "args": {
+        "table": "bot_user",
+        "objects": [
+            {
+                "telegram_id": ctx.message.chat.id,
+                "first_name": ctx.message.chat.first_name,
+                "last_name": ctx.message.chat.last_name
+            }
+        ]
+    }
+};
+
+  requestOptions.body = JSON.stringify(body)
+  fetch("https://data.avocado32.hasura-app.io/v1/query", requestOptions)
+  .then((response) => {
+    return response.json();
+  })
+  .then((result) => {
+    checkLastRequest(ctx);
+  })
+  .catch((error) => {
+    console.log(`createUser Failed: ${error}`);
+  });
+}
+
+// Send API request to check whether user exists
+function checkUser(ctx) {
+  let body = {
+      "type": "select",
+      "args": {
+          "table": "bot_user",
+          "columns": [
+              "id"
+          ],
+          "where": {
+              "telegram_id": {
+                  "$eq": ctx.message.chat.id
+              }
+          }
+      }
+  };
+
+  requestOptions.body = JSON.stringify(body)
+  fetch("https://data.avocado32.hasura-app.io/v1/query", requestOptions)
+  .then((response) => {
+    return response.json();
+  })
+  .then((result) => {
+    if (result[0] == undefined) {
+      createUser(ctx);
+    } else {
+      return ctx.reply(msg.basic.start);
+    }
+  })
+  .catch((error) => {
+    console.log(`checkUser Failed: ${error}`);
+  });
 }
 
 // User subs to request pings; sub on by default
@@ -199,7 +427,6 @@ function subscribe(ctx) {
   }
 }
 
-// WIP
 // User unsubs to request pings
 function unsubscribe(ctx) {
   if (this.subscribeStatus) {
@@ -223,7 +450,7 @@ const recommendProcess = new WizardScene(
     dedicate(ctx); // Step 3: Dedicate Message
   }),
   mount(`text`, ctx => {
-    deliver(ctx); // Step 4: Deliver Recommendation
+    deliverOne(ctx); // Step 4: Deliver Recommendation (1-3)
   })
 );
 
@@ -304,7 +531,6 @@ bot.use(stage.middleware());
 // Upon bot start
 bot.start(ctx => {
   checkUser(ctx);
-  request(ctx);
 });
 
 // User enters the asking process
