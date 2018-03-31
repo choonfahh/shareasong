@@ -1,0 +1,4 @@
+- args:
+    sql: ALTER TABLE "bot_user" ADD COLUMN "last_request_received" integer NUll DEFAULT
+      0
+  type: run_sql
