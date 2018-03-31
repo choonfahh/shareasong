@@ -60,7 +60,7 @@ function checkLastRequest(ctx) {
   };
 
   requestOptions.body = JSON.stringify(body);
-  fetch("https://data.avocado32.hasura-app.io/v1/query", requestOptions)
+  fetch(process.env.DATA_WEBHOOK_URL, requestOptions)
     .then(response => {
       return response.json();
     })
@@ -99,7 +99,7 @@ function getRequest(ctx, lastRequest) {
   };
 
   requestOptions.body = JSON.stringify(body);
-  fetch("https://data.avocado32.hasura-app.io/v1/query", requestOptions)
+  fetch(process.env.DATA_WEBHOOK_URL, requestOptions)
     .then(response => {
       return response.json();
     })
@@ -149,7 +149,7 @@ function deliveredRequest(ctx, lastRequest) {
   };
 
   requestOptions.body = JSON.stringify(body);
-  fetch("https://data.avocado32.hasura-app.io/v1/query", requestOptions)
+  fetch(process.env.DATA_WEBHOOK_URL, requestOptions)
     .then(response => {
       return response.json();
     })
@@ -263,7 +263,7 @@ function deliverOne(ctx) {
   };
 
   requestOptions.body = JSON.stringify(body);
-  fetch("https://data.avocado32.hasura-app.io/v1/query", requestOptions)
+  fetch(process.env.DATA_WEBHOOK_URL, requestOptions)
     .then(response => {
       return response.json();
     })
@@ -333,7 +333,7 @@ function deliverTwo(ctx, requestId, recipient, userId) {
   };
 
   requestOptions.body = JSON.stringify(body);
-  fetch("https://data.avocado32.hasura-app.io/v1/query", requestOptions)
+  fetch(process.env.DATA_WEBHOOK_URL, requestOptions)
     .then(response => {
       return response.json();
     })
@@ -355,13 +355,7 @@ function deliverThree(ctx, recipient) {
     setTimeout(() => {
       return ctx.reply(`${recipient} really loved your recommendation!`);
     }, responseTime),
-    setTimeout(() => {
-      if (subscribeStatus) {
-        checkLastRequest(ctx);
-      } else {
-        return;
-      }
-    }, newRequest),
+    setTimeout(checkLastRequest(ctx), newRequest),
     ctx.scene.leave()
   );
 }
@@ -383,7 +377,7 @@ function createUser(ctx) {
   };
 
   requestOptions.body = JSON.stringify(body);
-  fetch("https://data.avocado32.hasura-app.io/v1/query", requestOptions)
+  fetch(process.env.DATA_WEBHOOK_URL, requestOptions)
     .then(response => {
       return response.json();
     })
@@ -411,7 +405,7 @@ function checkUser(ctx) {
   };
 
   requestOptions.body = JSON.stringify(body);
-  fetch("https://data.avocado32.hasura-app.io/v1/query", requestOptions)
+  fetch(process.env.DATA_WEBHOOK_URL, requestOptions)
     .then(response => {
       return response.json();
     })
@@ -445,7 +439,7 @@ function subscribeUpdate(ctx) {
     }
   };
   requestOptions.body = JSON.stringify(body);
-  fetch("https://data.avocado32.hasura-app.io/v1/query", requestOptions)
+  fetch(process.env.DATA_WEBHOOK_URL, requestOptions)
     .then(response => {
       return response.json();
     })
@@ -543,7 +537,7 @@ function waitingUpdate(ctx) {
     }
   };
   requestOptions.body = JSON.stringify(body);
-  fetch("https://data.avocado32.hasura-app.io/v1/query", requestOptions)
+  fetch(process.env.DATA_WEBHOOK_URL, requestOptions)
     .then(response => {
       return response.json();
     })
