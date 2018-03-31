@@ -13,17 +13,17 @@ const { enter, leave } = Stage;
 const config = require(`./config.json`);
 const msg = config.reply;
 
+// User properties
+var pendingSession = undefined;
+var subscribeStatus = true;
+var waitingList = false;
+
 // Temporal storage of JSON variables - strictly synchronous
 var queryContext = undefined;
 var songName = undefined;
 var songArtist = undefined;
 var songExplain = undefined;
 var songDedicate = undefined;
-
-// User properties
-this.pendingSession = undefined;
-this.subscribeStatus = true;
-this.waitingList = false;
 
 // JSON API request options
 const requestOptions = {
@@ -36,16 +36,27 @@ const requestOptions = {
 // Send API request to get last request received
 function checkLastRequest(ctx) {
   let body = {
-    type: "select",
-    args: {
-      table: "bot_user",
-      columns: ["last_request_received"],
-      where: {
-        telegram_id: {
-          $eq: ctx.message.chat.id
+    type: "bulk",
+    args: [
+      {
+        type: "select",
+        args: {
+          table: "bot_user",
+          columns: ["last_request_received"],
+          where: {
+            telegram_id: {
+              $eq: ctx.message.chat.id
+            }
+          }
+        }
+      },
+      {
+        type: "count",
+        args: {
+          table: "request"
         }
       }
-    }
+    ]
   };
 
   requestOptions.body = JSON.stringify(body);
@@ -54,8 +65,18 @@ function checkLastRequest(ctx) {
       return response.json();
     })
     .then(result => {
-      let lastRequest = result[0].last_request_received;
-      getRequest(ctx, lastRequest);
+      let lastRequest = result[0][0].last_request_received;
+      let totalRequests = result[1].count;
+      let refreshUpdate = 1000 * 60 * 60 * 1; // Refreshes whether there's any new requests in one hour
+      if (lastRequest === totalRequests) {
+        setTimeout(checkLastRequest(ctx), refreshUpdate);
+      } else {
+        if (subscribeStatus) {
+          getRequest(ctx, lastRequest);
+        } else {
+          return;
+        }
+      }
     })
     .catch(error => {
       console.log(`checkLastRequest Failed: ${error}`);
@@ -160,7 +181,7 @@ function request(ctx, requestContent, lastRequest) {
 // User indicates to start recommendProcess
 function create(ctx) {
   queryContext = ctx.callbackQuery.message.text.split("\n\n")[0];
-  this.subscribeStatus = true;
+  subscribeStatus = true;
   return (
     ctx.answerCbQuery(msg.recommend.create),
     ctx.scene.enter(`recommend-process`)
@@ -182,7 +203,7 @@ function redo(ctx) {
 
 // User select song for recommendProcess
 function select(ctx) {
-  this.pendingSession = ctx.scene.session.current;
+  pendingSession = ctx.scene.session.current;
   return (
     ctx.reply(msg.recommend.select, Extra.inReplyTo(queryNumber)),
     ctx.wizard.next()
@@ -327,15 +348,15 @@ function deliverTwo(ctx, requestId, recipient, userId) {
 // send delivered message, validation, next request
 function deliverThree(ctx, recipient) {
   let responseTime = 1000 * 60 * 7; // User receives validation response after 7 mins
-  let newRequest = 1000 * 60 * 60 * 1; // User receives new request after 1 hour
-  this.pendingSession = undefined;
+  let newRequest = 1000 * 60 * 60 * 24; // User receives new request after 1 day
+  pendingSession = undefined;
   return (
     ctx.reply(msg.recommend.deliver),
     setTimeout(() => {
       return ctx.reply(`${recipient} really loved your recommendation!`);
     }, responseTime),
     setTimeout(() => {
-      if (this.subscribeStatus) {
+      if (subscribeStatus) {
         checkLastRequest(ctx);
       } else {
         return;
@@ -418,7 +439,7 @@ function subscribeUpdate(ctx) {
         }
       },
       $set: {
-        subscribe_status: this.subscribeStatus
+        subscribe_status: subscribeStatus
       },
       $default: ["last_active"]
     }
@@ -438,18 +459,20 @@ function subscribeUpdate(ctx) {
 
 // User subs to request pings; sub on by default
 function subscribe(ctx) {
-  if (this.subscribeStatus) {
+  if (subscribeStatus) {
     return ctx.reply(msg.recommend.subExist);
   } else {
-    this.subscribeStatus = true;
-    return subscribeUpdate(ctx), ctx.reply(msg.recommend.sub);
+    subscribeStatus = true;
+    return (
+      subscribeUpdate(ctx), checkLastRequest(ctx), ctx.reply(msg.recommend.sub)
+    );
   }
 }
 
 // User unsubs to request pings
 function unsubscribe(ctx) {
-  if (this.subscribeStatus) {
-    this.subscribeStatus = false;
+  if (subscribeStatus) {
+    subscribeStatus = false;
     return subscribeUpdate(ctx), ctx.reply(msg.recommend.unsub);
   } else {
     return ctx.reply(msg.recommend.unsubExist);
@@ -475,13 +498,13 @@ const recommendProcess = new WizardScene(
 
 // User cancels current input
 recommendProcess.command(`cancel`, ctx => {
-  this.pendingSession = undefined;
+  pendingSession = undefined;
   cancel(ctx);
 });
 
 // User unsubs during recommendProcess
 recommendProcess.command(`unsub`, ctx => {
-  this.pendingSession = undefined;
+  pendingSession = undefined;
   cancel(ctx);
   unsubscribe(ctx);
 });
@@ -503,7 +526,7 @@ const askProcess = new Scene(`ask-process`);
 askProcess.enter(ctx => ctx.reply(msg.ask.intent));
 
 // Send API to update subscribe status
-function waitingUpdate(ctx, waitingList) {
+function waitingUpdate(ctx) {
   let body = {
     type: "update",
     args: {
@@ -534,31 +557,21 @@ function waitingUpdate(ctx, waitingList) {
 
 // User indicates to join the waiting list
 askProcess.command(`join`, ctx => {
-  if (this.waitingList) {
+  if (waitingList) {
     return ctx.reply(msg.ask.joinExist), ctx.scene.leave();
   } else {
-    this.waitingList = true;
-    let waitingList = this.waitingList;
-    return (
-      waitingUpdate(ctx, waitingList),
-      ctx.reply(msg.ask.join),
-      ctx.scene.leave()
-    );
+    waitingList = true;
+    return waitingUpdate(ctx), ctx.reply(msg.ask.join), ctx.scene.leave();
   }
 });
 
 // User declines to join the waiting list
 askProcess.command(`no`, ctx => {
-  if (!this.waitingList) {
+  if (!waitingList) {
     return ctx.reply(msg.ask.decline), ctx.scene.leave();
   } else {
-    this.waitingList = false;
-    let waitingList = this.waitingList;
-    return (
-      waitingUpdate(ctx, waitingList),
-      ctx.reply(msg.ask.decline),
-      ctx.scene.leave()
-    );
+    waitingList = false;
+    return waitingUpdate(ctx), ctx.reply(msg.ask.decline), ctx.scene.leave();
   }
 });
 
@@ -616,8 +629,8 @@ bot.action(`create-reply`, ctx => {
 
 // No running processes in the bot
 bot.on(`message`, ctx => {
-  if (this.pendingSession !== ctx.scene.session.current) {
-    this.pendingSession = undefined;
+  if (pendingSession !== ctx.scene.session.current) {
+    pendingSession = undefined;
     return ctx.reply(msg.basic.timeout);
   } else {
     return ctx.reply(msg.basic.default);
