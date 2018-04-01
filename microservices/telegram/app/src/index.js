@@ -17,6 +17,7 @@ const msg = config.reply;
 var pendingSession = undefined;
 var subscribeStatus = true;
 var waitingList = false;
+var nextRequestTimer = 0;
 
 // Temporal storage of JSON variables - strictly synchronous
 var queryContext = undefined;
@@ -68,14 +69,18 @@ function checkLastRequest(ctx) {
       let lastRequest = result[0][0].last_request_received;
       let totalRequests = result[1].count;
       let refreshUpdate = 1000 * 60 * 60 * 1; // Refreshes whether there's any new requests in one hour
-      if (lastRequest === totalRequests) {
-        setTimeout(checkLastRequest(ctx), refreshUpdate);
-      } else {
-        if (subscribeStatus) {
-          getRequest(ctx, lastRequest);
+      if (nextRequestTimer === 0) {
+        if (lastRequest === totalRequests) {
+          setTimeout(checkLastRequest, refreshUpdate, ctx);
         } else {
-          return;
+          if (subscribeStatus) {
+            getRequest(ctx, lastRequest);
+          } else {
+            return;
+          }
         }
+      } else {
+        return;
       }
     })
     .catch(error => {
@@ -163,19 +168,31 @@ function deliveredRequest(ctx, lastRequest) {
 
 // Request ping to user
 function request(ctx, requestContent, lastRequest) {
-  return ctx
-    .reply(
-      `Hey ${ctx.message.chat.first_name} there's an incoming song request!`
-    )
-    .then(() => {
-      return ctx.replyWithHTML(
-        `${requestContent}\n\n<b>Would you like to recommend a song?</b>`,
-        Markup.inlineKeyboard([
-          Markup.callbackButton(msg.recommend.intent, `create-reply`)
-        ]).extra()
-      );
-    })
-    .then(deliveredRequest(ctx, lastRequest));
+  nextRequestTimer = 24;
+  let newRequest = 1000 * 60 * 60 * 24; // User receives new request after 1 day
+  let countdownDecrement = 1000 * 60 * 60 * 1;
+  let requestCountdown = setInterval(() => {
+    nextRequestTimer--;
+    if (nextRequestTimer === 0) {
+      clearInterval(requestCountdown);
+    }
+  }, countdownDecrement);
+  return (
+    ctx
+      .reply(
+        `Hey ${ctx.message.chat.first_name} there's an incoming song request!`
+      )
+      .then(() => {
+        return ctx.replyWithHTML(
+          `${requestContent}\n\n<b>Would you like to recommend a song?</b>`,
+          Markup.inlineKeyboard([
+            Markup.callbackButton(msg.recommend.intent, `create-reply`)
+          ]).extra()
+        );
+      })
+      .then(deliveredRequest(ctx, lastRequest)),
+    setTimeout(checkLastRequest, newRequest, ctx)
+  );
 }
 
 // User indicates to start recommendProcess
@@ -347,15 +364,13 @@ function deliverTwo(ctx, requestId, recipient, userId) {
 
 // send delivered message, validation, next request
 function deliverThree(ctx, recipient) {
-  let responseTime = 1000 * 60 * 7; // User receives validation response after 7 mins
-  let newRequest = 1000 * 60 * 60 * 24; // User receives new request after 1 day
   pendingSession = undefined;
+  let responseTime = 1000 * 60 * 7; // User receives validation response after 7 mins
   return (
     ctx.reply(msg.recommend.deliver),
     setTimeout(() => {
       return ctx.reply(`${recipient} really loved your recommendation!`);
     }, responseTime),
-    setTimeout(checkLastRequest(ctx), newRequest),
     ctx.scene.leave()
   );
 }
