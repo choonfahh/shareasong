@@ -13,11 +13,14 @@ const { enter, leave } = Stage;
 const config = require(`./config.json`);
 const msg = config.reply;
 
+// process.env.DATA_WEBHOOK_URL
+
 // User properties
 var pendingSession = undefined;
 var subscribeStatus = true;
 var waitingList = false;
 var nextRequestTimer = 0;
+var pendingRequest = false;
 
 // Temporal storage of JSON variables - strictly synchronous
 var queryContext = undefined;
@@ -66,9 +69,10 @@ function checkLastRequest(ctx) {
       return response.json();
     })
     .then(result => {
+      pendingRequest = false;
       let lastRequest = result[0][0].last_request_received;
       let totalRequests = result[1].count;
-      let refreshUpdate = 1000 * 60 * 60 * 1; // Refreshes whether there's any new requests in one hour
+      let refreshUpdate = 1000 * 60 * 60 * 0.5; // Refreshes whether there's any new requests in one hour
       if (nextRequestTimer === 0) {
         if (lastRequest === totalRequests) {
           setTimeout(checkLastRequest, refreshUpdate, ctx);
@@ -168,8 +172,9 @@ function deliveredRequest(ctx, lastRequest) {
 
 // Request ping to user
 function request(ctx, requestContent, lastRequest) {
-  nextRequestTimer = 24;
-  let newRequest = 1000 * 60 * 60 * 24; // User receives new request after 1 day
+  nextRequestTimer = 2;
+  pendingRequest = true;
+  let newRequest = 1000 * 60 * 60 * 2; // User receives new request after 1 day
   let countdownDecrement = 1000 * 60 * 60 * 1;
   let requestCountdown = setInterval(() => {
     nextRequestTimer--;
@@ -425,7 +430,8 @@ function checkUser(ctx) {
       return response.json();
     })
     .then(result => {
-      if (result[0] == undefined) {
+      if (result[0] === undefined) {
+        console.log("No user found");
         createUser(ctx);
       } else {
         return ctx.reply(msg.basic.start);
@@ -471,10 +477,17 @@ function subscribe(ctx) {
   if (subscribeStatus) {
     return ctx.reply(msg.recommend.subExist);
   } else {
-    subscribeStatus = true;
-    return (
-      subscribeUpdate(ctx), checkLastRequest(ctx), ctx.reply(msg.recommend.sub)
-    );
+    if (pendingRequest) {
+      subscribeStatus = true;
+      return subscribeUpdate(ctx), ctx.reply(msg.recommend.sub);
+    } else {
+      subscribeStatus = true;
+      return (
+        subscribeUpdate(ctx),
+        checkLastRequest(ctx),
+        ctx.reply(msg.recommend.sub)
+      );
+    }
   }
 }
 
