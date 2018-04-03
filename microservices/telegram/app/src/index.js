@@ -373,9 +373,9 @@ function deliverThree(ctx, recipient) {
   let responseTime = 1000 * 60 * 7; // User receives validation response after 7 mins
   return (
     ctx.reply(msg.recommend.deliver),
-    setTimeout(() => {
-      return ctx.reply(`${recipient} really loved your recommendation!`);
-    }, responseTime),
+    //setTimeout(() => {
+    //  return ctx.reply(`${recipient} really loved your recommendation!`);
+    //}, responseTime),
     ctx.scene.leave()
   );
 }
@@ -430,12 +430,13 @@ function checkUser(ctx) {
       return response.json();
     })
     .then(result => {
-      if (result[0] === undefined) {
-        console.log("No user found");
-        createUser(ctx);
-      } else {
-        return ctx.reply(msg.basic.start);
-      }
+      createUser(ctx);
+      //if (result[0] === undefined) {
+      //  console.log("No user found");
+      //  createUser(ctx);
+      //} else {
+      //  return ctx.reply(msg.basic.start);
+      //}
     })
     .catch(error => {
       console.log(`checkUser Failed: ${error}`);
