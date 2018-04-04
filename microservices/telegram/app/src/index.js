@@ -371,7 +371,7 @@ function deliverThree(ctx, recipient) {
   pendingSession = undefined;
   let responseTime = 1000 * 60 * 7; // User receives validation response after 7 mins
   return (
-    ctx.reply(msg.recommend.deliver),
+    ctx.telegram.sendMessage(ctx.message.chat.id, msg.recommend.deliver),
     // setTimeout(() => {
     //  return ctx.reply(`${recipient} really loved your recommendation!`);
     //}, responseTime),
@@ -627,7 +627,6 @@ bot.use(stage.middleware());
 
 // Upon bot start
 bot.start(ctx => {
-  ctx.telegram.sendMessage(ctx.message.chat.id, `Hello`);
   checkUser(ctx);
 });
 
