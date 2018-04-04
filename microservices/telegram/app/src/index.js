@@ -642,6 +642,10 @@ bot.command(`unsub`, ctx => {
   unsubscribe(ctx);
 });
 
+bot.command(`request`, ctx => {
+  ctx.reply(`${nextRequestTimer}`);
+});
+
 // Redirect to start of recommendationProcess
 bot.action(`create-reply`, ctx => {
   create(ctx);
