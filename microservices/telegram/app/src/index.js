@@ -292,7 +292,7 @@ function deliverOne(ctx) {
       let requestId = result[0][0].id;
       let recipient = result[0][0].user.first_name;
       let userId = result[1][0].id;
-      return deliverTwo(ctx, requestId, recipient, userId);
+      return deliverTwo(ctx, requestId, recipient, userId), ctx.reply(`deliverOne completed`);
     })
     .catch(error => {
       return console.log(`deliverOne Failed: ${error}`);
@@ -359,7 +359,7 @@ function deliverTwo(ctx, requestId, recipient, userId) {
       return response.json();
     })
     .then(result => {
-      return deliverThree(ctx, recipient);
+      return deliverThree(ctx, recipient), ctx.reply(`deliverTwo completed`);
     })
     .catch(error => {
       return console.log(`deliverTwo Failed: ${error}`);
@@ -371,7 +371,7 @@ function deliverThree(ctx, recipient) {
   pendingSession = undefined;
   let responseTime = 1000 * 60 * 7; // User receives validation response after 7 mins
   return (
-    ctx.telegram.sendMessage(ctx.message.chat.id, msg.recommend.deliver),
+    ctx.reply(msg.recommend.deliver),
     // setTimeout(() => {
     //  return ctx.reply(`${recipient} really loved your recommendation!`);
     //}, responseTime),
