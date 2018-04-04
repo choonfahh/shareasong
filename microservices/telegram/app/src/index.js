@@ -424,7 +424,7 @@ function checkUser(ctx) {
   };
 
   requestOptions.body = JSON.stringify(body);
-  ctx.reply(``);
+  console.log('Checking User');
   fetch(process.env.DATA_WEBHOOK_URL, requestOptions)
     .then(response => {
       return response.json();
