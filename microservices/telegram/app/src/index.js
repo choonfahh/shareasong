@@ -409,7 +409,7 @@ function createUser(ctx) {
 }
 
 // Send API request to check whether user exists
-function checkUser(ctx) {
+function checkUser1(ctx) {
   let body = {
     type: "select",
     args: {
@@ -438,6 +438,15 @@ function checkUser(ctx) {
     .catch(error => {
       return console.log(`checkUser Failed: ${error}`);
     });
+}
+
+function checkUser(ctx) {
+  let result = [];
+  if (result[0] === undefined) {
+    return createUser(ctx), ctx.reply(result);
+  } else {
+    return ctx.reply(msg.basic.start);
+  }
 }
 
 // Send API to update subscribe status
