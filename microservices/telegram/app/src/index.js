@@ -116,7 +116,7 @@ function getRequest(ctx, lastRequest) {
     })
     .then(result => {
       let requestContent = result[0].content;
-      return request(ctx, requestContent, lastRequest), ctx.reply(`getRequest completed`);
+      return request(ctx, requestContent, lastRequest);
     })
     .catch(error => {
       return console.log(`getRequest Failed: ${error}`);
@@ -365,7 +365,7 @@ function deliverTwo(ctx, requestId, recipient, userId) {
       return response.json();
     })
     .then(result => {
-      return deliverThree(ctx, recipient), ctx.reply(`deliverTwo completed`);
+      return deliverThree(ctx, recipient);
     })
     .catch(error => {
       return console.log(`deliverTwo Failed: ${error}`);
