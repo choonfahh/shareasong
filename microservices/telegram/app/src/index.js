@@ -650,7 +650,7 @@ bot.start(ctx => {
       //  return createUser(ctx), ctx.reply(result);
       //} else {
       //  return ctx.reply(result), ctx.reply(msg.basic.start);
-      return ctx.reply(`hi`), ctx.reply(`hi`), ctx.reply(`hi`), ctx.reply(`hi`);
+      return console.log('hi'), ctx.reply(`hi`), ctx.reply(`hi`), ctx.reply(`hi`);
     })
     .catch(error => {
       return console.log(`checkUser Failed: ${error}`);
