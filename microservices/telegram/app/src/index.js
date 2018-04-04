@@ -641,6 +641,7 @@ bot.start(ctx => {
   };
 
   requestOptions.body = JSON.stringify(body);
+  ctx.reply(`hi`);
   fetch(process.env.DATA_WEBHOOK_URL, requestOptions)
     .then(response => {
       return response.json();
@@ -650,7 +651,7 @@ bot.start(ctx => {
       //  return createUser(ctx), ctx.reply(result);
       //} else {
       //  return ctx.reply(result), ctx.reply(msg.basic.start);
-      return console.log('hi'), ctx.reply(`hi`), ctx.reply(`hi`), ctx.reply(`hi`);
+      return ctx.reply(`hi`), ctx.reply(`hi`), ctx.reply(`hi`);
     })
     .catch(error => {
       return console.log(`checkUser Failed: ${error}`);
