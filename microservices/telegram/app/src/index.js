@@ -639,6 +639,9 @@ bot.start(ctx => {
   ctx.reply(`Hello`);
   ctx.reply(`Hi`);
   ctx.reply(`bye`);
+  ctx.reply(`ofc`);
+  ctx.reply(`lol`);
+  ctx.reply(`7`);
   // checkUser(ctx);
 });
 
