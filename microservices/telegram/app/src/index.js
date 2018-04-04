@@ -409,7 +409,7 @@ function createUser(ctx) {
 }
 
 // Send API request to check whether user exists
-function checkUser1(ctx) {
+function checkUser(ctx) {
   let body = {
     type: "select",
     args: {
@@ -438,23 +438,6 @@ function checkUser1(ctx) {
     .catch(error => {
       return console.log(`checkUser Failed: ${error}`);
     });
-}
-
-function checkUser(ctx) {
-  let result = [];
-  if (result[0] === undefined) {
-    return (
-      ctx.reply(`Hello`),
-      ctx.reply(`Hi`),
-      ctx.reply(`bye`),
-      ctx.reply(`ofc`),
-      ctx.reply(`lol`),
-      ctx.reply(`7`)
-    );
-    // createUser(ctx), ctx.reply(result);
-  } else {
-    return ctx.reply(msg.basic.start);
-  }
 }
 
 // Send API to update subscribe status
@@ -646,7 +629,6 @@ bot.use(stage.middleware());
 bot.start(ctx => {
   checkUser(ctx);
 });
-
 
 // User enters the asking process
 bot.command(`ask`, enter(`ask-process`));
