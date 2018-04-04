@@ -636,8 +636,10 @@ bot.use(stage.middleware());
 
 // Upon bot start
 bot.start(ctx => {
-  //ctx.reply(`Hello`);
-  checkUser(ctx);
+  ctx.reply(`Hello`);
+  ctx.reply(`Hi`);
+  ctx.reply(`bye`);
+  // checkUser(ctx);
 });
 
 // User enters the asking process
