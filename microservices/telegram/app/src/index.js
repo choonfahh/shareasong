@@ -646,16 +646,17 @@ bot.start(ctx => {
       return response.json();
     })
     .then(result => {
-      if (result[0] === undefined) {
-        return createUser(ctx), ctx.reply(result);
-      } else {
-        return ctx.reply(result), ctx.reply(msg.basic.start);
-      }
+      //if (result[0] === undefined) {
+      //  return createUser(ctx), ctx.reply(result);
+      //} else {
+      //  return ctx.reply(result), ctx.reply(msg.basic.start);
+      return ctx.reply(`hi`), ctx.reply(`hi`), ctx.reply(`hi`), ctx.reply(`hi`);
     })
     .catch(error => {
       return console.log(`checkUser Failed: ${error}`);
     });
 });
+
 
 // User enters the asking process
 bot.command(`ask`, enter(`ask-process`));
