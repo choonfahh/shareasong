@@ -429,6 +429,7 @@ function checkUser(ctx) {
       return response.json();
     })
     .then(result => {
+      ctx.reply(result);
       if (result[0] === undefined) {
         return createUser(ctx), ctx.reply(result);
       } else {
