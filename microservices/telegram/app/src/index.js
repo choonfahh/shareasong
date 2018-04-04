@@ -292,7 +292,7 @@ function deliverOne(ctx) {
       let requestId = result[0][0].id;
       let recipient = result[0][0].user.first_name;
       let userId = result[1][0].id;
-      return deliverTwo(ctx, requestId, recipient, userId), ctx.reply(`deliverOne completed`);
+      return ctx.reply(`deliverOne completed`), deliverTwo(ctx, requestId, recipient, userId);
     })
     .catch(error => {
       return console.log(`deliverOne Failed: ${error}`);
@@ -432,7 +432,7 @@ function checkUser(ctx) {
       if (result[0] === undefined) {
         return createUser(ctx), ctx.reply(result);
       } else {
-        return console.log("User exists"), ctx.reply(msg.basic.start);
+        return ctx.reply(msg.basic.start);
       }
     })
     .catch(error => {
