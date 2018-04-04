@@ -432,7 +432,8 @@ function checkUser(ctx) {
       if (result[0] === undefined) {
         return createUser(ctx), ctx.reply(result);
       } else {
-        return ctx.reply(msg.basic.start);
+        return ctx.telegram.sendMessage(ctx.message.chat.id, result)
+        //ctx.reply(msg.basic.start);
       }
     })
     .catch(error => {
