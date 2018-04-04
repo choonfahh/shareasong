@@ -410,7 +410,6 @@ function createUser(ctx) {
 
 // Send API request to check whether user exists
 function checkUser(ctx) {
-  ctx.reply('checkUser');
   let body = {
     type: "select",
     args: {
@@ -430,7 +429,6 @@ function checkUser(ctx) {
       return response.json();
     })
     .then(result => {
-      ctx.reply(result);
       if (result[0] === undefined) {
         return createUser(ctx), ctx.reply(result);
       } else {
@@ -629,7 +627,34 @@ bot.use(stage.middleware());
 
 // Upon bot start
 bot.start(ctx => {
-  checkUser(ctx);
+  let body = {
+    type: "select",
+    args: {
+      table: "bot_user",
+      columns: ["id"],
+      where: {
+        telegram_id: {
+          $eq: ctx.message.chat.id
+        }
+      }
+    }
+  };
+
+  requestOptions.body = JSON.stringify(body);
+  fetch(process.env.DATA_WEBHOOK_URL, requestOptions)
+    .then(response => {
+      return response.json();
+    })
+    .then(result => {
+      if (result[0] === undefined) {
+        return createUser(ctx), ctx.reply(result);
+      } else {
+        return ctx.reply(msg.basic.start);
+      }
+    })
+    .catch(error => {
+      return console.log(`checkUser Failed: ${error}`);
+    });
 });
 
 // User enters the asking process
