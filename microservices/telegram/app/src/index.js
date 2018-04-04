@@ -430,7 +430,7 @@ function checkUser(ctx) {
     })
     .then(result => {
       if (result[0] === undefined) {
-        return createUser(ctx), ctx.reply(result);
+        return createUser(ctx), ctx.reply(`no user exist`);
       } else {
         return ctx.reply(msg.basic.start);
       }
@@ -627,37 +627,8 @@ bot.use(stage.middleware());
 
 // Upon bot start
 bot.start(ctx => {
-  let body = {
-    type: "select",
-    args: {
-      table: "bot_user",
-      columns: ["id"],
-      where: {
-        telegram_id: {
-          $eq: ctx.message.chat.id
-        }
-      }
-    }
-  };
-
-  requestOptions.body = JSON.stringify(body);
-  ctx.reply(`hi`);
-  fetch(process.env.DATA_WEBHOOK_URL, requestOptions)
-    .then(response => {
-      return response.json();
-    })
-    .then(result => {
-      //if (result[0] === undefined) {
-      //  return createUser(ctx), ctx.reply(result);
-      //} else {
-      //  return ctx.reply(result), ctx.reply(msg.basic.start);
-      return ctx.reply(`hi`), ctx.reply(`hi`), ctx.reply(`hi`);
-    })
-    .catch(error => {
-      return console.log(`checkUser Failed: ${error}`);
-    });
+  checkUser(ctx);
 });
-
 
 // User enters the asking process
 bot.command(`ask`, enter(`ask-process`));
