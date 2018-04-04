@@ -114,7 +114,7 @@ function getRequest(ctx, lastRequest) {
     })
     .then(result => {
       let requestContent = result[0].content;
-      return request(ctx, requestContent, lastRequest);
+      return request(ctx, requestContent, lastRequest), ctx.reply(`getRequest completed`);
     })
     .catch(error => {
       return console.log(`getRequest Failed: ${error}`);
@@ -401,7 +401,7 @@ function createUser(ctx) {
       return response.json();
     })
     .then(result => {
-      return checkLastRequest(ctx);
+      return checkLastRequest(ctx), ctx.reply(`createUser completed`);
     })
     .catch(error => {
       return console.log(`createUser Failed: ${error}`);
@@ -430,7 +430,7 @@ function checkUser(ctx) {
     })
     .then(result => {
       if (result[0] === undefined) {
-        return console.log("No user found"), createUser(ctx);
+        return createUser(ctx), ctx.reply(result);
       } else {
         return console.log("User exists"), ctx.reply(msg.basic.start);
       }
@@ -603,7 +603,8 @@ askProcess.on(`message`, ctx => {
 // Bot, server, stage initialized
 let sessionMax = 60 * 5; // recommendProcess lasts for 5 minutes max.
 const server = express();
-const stage = new Stage([recommendProcess, askProcess], { ttl: sessionMax });
+const stage = new Stage([recommendProcess, askProcess], { ttl:
+  sessionMax });
 const bot = new Telegraf(process.env.TELEGRAM_API); // for dev, use dev.Api
 var queryNumber = 0;
 
@@ -626,6 +627,7 @@ bot.use(stage.middleware());
 
 // Upon bot start
 bot.start(ctx => {
+  ctx.telegram.sendMessage(ctx.message.chat.id, `Hello`);
   checkUser(ctx);
 });
 
