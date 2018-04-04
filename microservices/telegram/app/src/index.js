@@ -75,10 +75,10 @@ function checkLastRequest(ctx) {
       let refreshUpdate = 1000 * 60 * 60 * 0.5; // Refreshes whether there's any new requests in one hour
       if (nextRequestTimer === 0) {
         if (lastRequest === totalRequests) {
-          setTimeout(checkLastRequest, refreshUpdate, ctx);
+          return setTimeout(checkLastRequest, refreshUpdate, ctx, lastRequest);
         } else {
           if (subscribeStatus) {
-            getRequest(ctx, lastRequest);
+            return getRequest(ctx, lastRequest);
           } else {
             return;
           }
@@ -88,7 +88,7 @@ function checkLastRequest(ctx) {
       }
     })
     .catch(error => {
-      console.log(`checkLastRequest Failed: ${error}`);
+      return console.log(`checkLastRequest Failed: ${error}`);
     });
 }
 
@@ -114,10 +114,10 @@ function getRequest(ctx, lastRequest) {
     })
     .then(result => {
       let requestContent = result[0].content;
-      request(ctx, requestContent, lastRequest);
+      return request(ctx, requestContent, lastRequest);
     })
     .catch(error => {
-      console.log(`getRequest Failed: ${error}`);
+      return console.log(`getRequest Failed: ${error}`);
     });
 }
 
@@ -166,7 +166,7 @@ function deliveredRequest(ctx, lastRequest) {
       return;
     })
     .catch(error => {
-      console.log(`deliveredRequest Failed: ${error}`);
+      return console.log(`deliveredRequest Failed: ${error}`);
     });
 }
 
@@ -183,8 +183,7 @@ function request(ctx, requestContent, lastRequest) {
     }
   }, countdownDecrement);
   return (
-    ctx
-      .reply(
+    ctx.reply(
         `Hey ${ctx.message.chat.first_name} there's an incoming song request!`
       )
       .then(() => {
@@ -293,10 +292,10 @@ function deliverOne(ctx) {
       let requestId = result[0][0].id;
       let recipient = result[0][0].user.first_name;
       let userId = result[1][0].id;
-      deliverTwo(ctx, requestId, recipient, userId);
+      return deliverTwo(ctx, requestId, recipient, userId);
     })
     .catch(error => {
-      console.log(`deliverOne Failed: ${error}`);
+      return console.log(`deliverOne Failed: ${error}`);
     });
 }
 
@@ -360,10 +359,10 @@ function deliverTwo(ctx, requestId, recipient, userId) {
       return response.json();
     })
     .then(result => {
-      deliverThree(ctx, recipient);
+      return deliverThree(ctx, recipient);
     })
     .catch(error => {
-      console.log(`deliverTwo Failed: ${error}`);
+      return console.log(`deliverTwo Failed: ${error}`);
     });
 }
 
@@ -373,9 +372,9 @@ function deliverThree(ctx, recipient) {
   let responseTime = 1000 * 60 * 7; // User receives validation response after 7 mins
   return (
     ctx.reply(msg.recommend.deliver),
-    setTimeout(() => {
-      return ctx.reply(`${recipient} really loved your recommendation!`);
-    }, responseTime),
+    // setTimeout(() => {
+    //  return ctx.reply(`${recipient} really loved your recommendation!`);
+    //}, responseTime),
     ctx.scene.leave()
   );
 }
@@ -402,10 +401,10 @@ function createUser(ctx) {
       return response.json();
     })
     .then(result => {
-      checkLastRequest(ctx);
+      return checkLastRequest(ctx);
     })
     .catch(error => {
-      console.log(`createUser Failed: ${error}`);
+      return console.log(`createUser Failed: ${error}`);
     });
 }
 
@@ -431,14 +430,13 @@ function checkUser(ctx) {
     })
     .then(result => {
       if (result[0] === undefined) {
-        console.log("No user found");
-        createUser(ctx);
+        return console.log("No user found"), createUser(ctx);
       } else {
-        return ctx.reply(msg.basic.start);
+        return console.log("User exists"), ctx.reply(msg.basic.start);
       }
     })
     .catch(error => {
-      console.log(`checkUser Failed: ${error}`);
+      return console.log(`checkUser Failed: ${error}`);
     });
 }
 
@@ -468,7 +466,7 @@ function subscribeUpdate(ctx) {
       return;
     })
     .catch(error => {
-      console.log(`subscribeUpdate Failed: ${error}`);
+      return console.log(`subscribeUpdate Failed: ${error}`);
     });
 }
 
@@ -573,7 +571,7 @@ function waitingUpdate(ctx) {
       return;
     })
     .catch(error => {
-      console.log(`waitingUpdate Failed: ${error}`);
+      return console.log(`waitingUpdate Failed: ${error}`);
     });
 }
 
