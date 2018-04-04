@@ -649,7 +649,7 @@ bot.start(ctx => {
       if (result[0] === undefined) {
         return createUser(ctx), ctx.reply(result);
       } else {
-        return ctx.reply(msg.basic.start);
+        return ctx.reply(result), ctx.reply(msg.basic.start);
       }
     })
     .catch(error => {
