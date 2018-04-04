@@ -410,6 +410,7 @@ function createUser(ctx) {
 
 // Send API request to check whether user exists
 function checkUser(ctx) {
+  ctx.reply('checkUser');
   let body = {
     type: "select",
     args: {
