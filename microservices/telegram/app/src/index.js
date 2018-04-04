@@ -443,7 +443,15 @@ function checkUser1(ctx) {
 function checkUser(ctx) {
   let result = [];
   if (result[0] === undefined) {
-    return createUser(ctx), ctx.reply(result);
+    return (
+      ctx.reply(`Hello`),
+      ctx.reply(`Hi`),
+      ctx.reply(`bye`),
+      ctx.reply(`ofc`),
+      ctx.reply(`lol`),
+      ctx.reply(`7`)
+    );
+    // createUser(ctx), ctx.reply(result);
   } else {
     return ctx.reply(msg.basic.start);
   }
