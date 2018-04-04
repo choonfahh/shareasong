@@ -64,6 +64,7 @@ function checkLastRequest(ctx) {
   };
 
   requestOptions.body = JSON.stringify(body);
+  ctx.reply(``); // Workaround to ensure delivery of messages
   fetch(process.env.DATA_WEBHOOK_URL, requestOptions)
     .then(response => {
       return response.json();
@@ -108,6 +109,7 @@ function getRequest(ctx, lastRequest) {
   };
 
   requestOptions.body = JSON.stringify(body);
+  ctx.reply(``); // Workaround to ensure delivery of messages
   fetch(process.env.DATA_WEBHOOK_URL, requestOptions)
     .then(response => {
       return response.json();
@@ -158,6 +160,7 @@ function deliveredRequest(ctx, lastRequest) {
   };
 
   requestOptions.body = JSON.stringify(body);
+  ctx.reply(``); // Workaround to ensure delivery of messages
   fetch(process.env.DATA_WEBHOOK_URL, requestOptions)
     .then(response => {
       return response.json();
@@ -182,6 +185,7 @@ function request(ctx, requestContent, lastRequest) {
       clearInterval(requestCountdown);
     }
   }, countdownDecrement);
+  ctx.reply(``); // Workaround to ensure delivery of messages
   return (
     ctx.reply(
         `Hey ${ctx.message.chat.first_name} there's an incoming song request!`
@@ -284,6 +288,7 @@ function deliverOne(ctx) {
   };
 
   requestOptions.body = JSON.stringify(body);
+  ctx.reply(``); // Workaround to ensure delivery of messages
   fetch(process.env.DATA_WEBHOOK_URL, requestOptions)
     .then(response => {
       return response.json();
@@ -354,6 +359,7 @@ function deliverTwo(ctx, requestId, recipient, userId) {
   };
 
   requestOptions.body = JSON.stringify(body);
+  ctx.reply(``); // Workaround to ensure delivery of messages
   fetch(process.env.DATA_WEBHOOK_URL, requestOptions)
     .then(response => {
       return response.json();
@@ -370,11 +376,12 @@ function deliverTwo(ctx, requestId, recipient, userId) {
 function deliverThree(ctx, recipient) {
   pendingSession = undefined;
   let responseTime = 1000 * 60 * 7; // User receives validation response after 7 mins
+  ctx.reply(``); // Workaround to ensure delivery of messages
   return (
     ctx.reply(msg.recommend.deliver),
-    // setTimeout(() => {
-    //  return ctx.reply(`${recipient} really loved your recommendation!`);
-    //}, responseTime),
+    setTimeout(() => {
+      return ctx.reply(`${recipient} really loved your recommendation!`);
+    }, responseTime),
     ctx.scene.leave()
   );
 }
@@ -396,12 +403,13 @@ function createUser(ctx) {
   };
 
   requestOptions.body = JSON.stringify(body);
+  ctx.reply(``); // Workaround to ensure delivery of messages
   fetch(process.env.DATA_WEBHOOK_URL, requestOptions)
     .then(response => {
       return response.json();
     })
     .then(result => {
-      return checkLastRequest(ctx), ctx.reply(`createUser completed`);
+      return checkLastRequest(ctx);
     })
     .catch(error => {
       return console.log(`createUser Failed: ${error}`);
@@ -424,14 +432,14 @@ function checkUser(ctx) {
   };
 
   requestOptions.body = JSON.stringify(body);
-  console.log('Checking User');
+  ctx.reply(``); // Workaround to ensure delivery of messages
   fetch(process.env.DATA_WEBHOOK_URL, requestOptions)
     .then(response => {
       return response.json();
     })
     .then(result => {
       if (result[0] === undefined) {
-        return createUser(ctx), ctx.reply(`no user exist`);
+        return createUser(ctx);
       } else {
         return ctx.reply(msg.basic.start);
       }
@@ -459,6 +467,7 @@ function subscribeUpdate(ctx) {
     }
   };
   requestOptions.body = JSON.stringify(body);
+  ctx.reply(``); // Workaround to ensure delivery of messages
   fetch(process.env.DATA_WEBHOOK_URL, requestOptions)
     .then(response => {
       return response.json();
@@ -473,6 +482,7 @@ function subscribeUpdate(ctx) {
 
 // User subs to request pings; sub on by default
 function subscribe(ctx) {
+  ctx.reply(``); // Workaround to ensure delivery of messages
   if (subscribeStatus) {
     return ctx.reply(msg.recommend.subExist);
   } else {
@@ -492,6 +502,7 @@ function subscribe(ctx) {
 
 // User unsubs to request pings
 function unsubscribe(ctx) {
+  ctx.reply(``); // Workaround to ensure delivery of messages
   if (subscribeStatus) {
     subscribeStatus = false;
     return subscribeUpdate(ctx), ctx.reply(msg.recommend.unsub);
@@ -564,6 +575,7 @@ function waitingUpdate(ctx) {
     }
   };
   requestOptions.body = JSON.stringify(body);
+  ctx.reply(``); // Workaround to ensure delivery of messages
   fetch(process.env.DATA_WEBHOOK_URL, requestOptions)
     .then(response => {
       return response.json();
