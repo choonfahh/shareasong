@@ -424,6 +424,7 @@ function checkUser(ctx) {
   };
 
   requestOptions.body = JSON.stringify(body);
+  ctx.reply(`Checking user status`);
   fetch(process.env.DATA_WEBHOOK_URL, requestOptions)
     .then(response => {
       return response.json();
