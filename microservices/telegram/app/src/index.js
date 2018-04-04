@@ -428,12 +428,11 @@ function checkUser(ctx) {
     .then(response => {
       return response.json();
     })
-    .then((result, ctx) => {
+    .then(result => {
       if (result[0] === undefined) {
         return createUser(ctx), ctx.reply(result);
       } else {
-        return ctx.telegram.sendMessage(ctx.message.chat.id, result);
-        //ctx.reply(msg.basic.start);
+        return ctx.reply(msg.basic.start);
       }
     })
     .catch(error => {
@@ -628,6 +627,7 @@ bot.use(stage.middleware());
 
 // Upon bot start
 bot.start(ctx => {
+  ctx.reply(`Hello`);
   checkUser(ctx);
 });
 
