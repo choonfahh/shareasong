@@ -642,20 +642,9 @@ bot.telegram.setWebhook(
 bot.use(session());
 bot.use(stage.middleware());
 
-function hello(ctx) {
-  return (
-    ctx.reply(`Hello`),
-    ctx.reply(`Hi`),
-    ctx.reply(`bye`),
-    ctx.reply(`ofc`),
-    ctx.reply(`lol`),
-    ctx.reply(`7`)
-  );
-}
 // Upon bot start
 bot.start(ctx => {
-  hello(ctx);
-  // checkUser(ctx);
+  checkUser(ctx);
 });
 
 
