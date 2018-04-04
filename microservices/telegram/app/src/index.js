@@ -292,7 +292,7 @@ function deliverOne(ctx) {
       let requestId = result[0][0].id;
       let recipient = result[0][0].user.first_name;
       let userId = result[1][0].id;
-      return ctx.reply(`deliverOne completed`), deliverTwo(ctx, requestId, recipient, userId);
+      return deliverTwo(ctx, requestId, recipient, userId);
     })
     .catch(error => {
       return console.log(`deliverOne Failed: ${error}`);
@@ -627,7 +627,7 @@ bot.use(stage.middleware());
 
 // Upon bot start
 bot.start(ctx => {
-  ctx.reply(`Hello`);
+  //ctx.reply(`Hello`);
   checkUser(ctx);
 });
 
