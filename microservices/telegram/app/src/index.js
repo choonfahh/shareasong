@@ -636,14 +636,17 @@ bot.use(stage.middleware());
 
 // Upon bot start
 bot.start(ctx => {
-  ctx.reply(`Hello`);
-  ctx.reply(`Hi`);
-  ctx.reply(`bye`);
-  ctx.reply(`ofc`);
-  ctx.reply(`lol`);
-  ctx.reply(`7`);
+  return (
+    ctx.reply(`Hello`),
+    ctx.reply(`Hi`),
+    ctx.reply(`bye`),
+    ctx.reply(`ofc`),
+    ctx.reply(`lol`),
+    ctx.reply(`7`)
+  );
   // checkUser(ctx);
 });
+
 
 // User enters the asking process
 bot.command(`ask`, enter(`ask-process`));
