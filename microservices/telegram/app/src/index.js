@@ -23,54 +23,19 @@ const requestOptions = {
   }
 };
 
-// Execute POST request to get updated user variables at initial script
-let body = {
-  type: "select",
-  args: {
-    table: "bot_user",
-    columns: [
-      "subscribe_status",
-      "waiting_list",
-      "next_request_timer",
-      "pending_request"
-    ],
-    where: {
-      telegram_id: {
-        $eq: ctx.message.chat.id
-      }
-    }
-  }
-};
-
-requestOptions.body = JSON.stringify(body);
-fetch(process.env.DATA_WEBHOOK_URL, requestOptions)
-  .then(response => {
-    return response.json();
-  })
-  .then(result => {
-    var pendingSession = undefined;
-    if (result[0] === undefined) {
-      var subscribeStatus = true;
-      var waitingList = false;
-      var nextRequestTimer = 0;
-      var pendingRequest = false;
-    } else {
-      var subscribeStatus = result[0].subscribe_status;
-      var waitingList = result[0].waiting_list;
-      var nextRequestTimer = result[0].next_request_timer;
-      var pendingRequest = result[0].pending_request;
-    }
-  })
-  .catch(error => {
-    return console.log(`getInitialUserDetails Failed: ${error}`);
-  });
+// Declaration of user variables
+var pendingSession;
+var subscribeStatus;
+var waitingList;
+var nextRequestTimer;
+var pendingRequest;
 
 // Temporal storage of JSON variables - strictly synchronous
-var queryContext = undefined;
-var songName = undefined;
-var songArtist = undefined;
-var songExplain = undefined;
-var songDedicate = undefined;
+var queryContext;
+var songName;
+var songArtist;
+var songExplain;
+var songDedicate;
 
 // Send API to update pending Request
 function pendingRequestUpdate(ctx) {
@@ -487,6 +452,12 @@ function deliverThree(ctx, recipient) {
 
 // Send API request to create new user inside bot_user
 function createUser(ctx) {
+  pendingSession = undefined;
+  subscribeStatus = true;
+  waitingList = false;
+  nextRequestTimer = 0;
+  pendingRequest = false;
+
   let body = {
     type: "insert",
     args: {
@@ -719,7 +690,7 @@ const stage = new Stage([recommendProcess, askProcess], {
   ttl: sessionMax
 });
 const bot = new Telegraf(process.env.TELEGRAM_API); // for dev, use dev.Api
-var queryNumber = 0;
+var queryNumber;
 
 // Creation of server at port 8080
 server.listen(8080);
