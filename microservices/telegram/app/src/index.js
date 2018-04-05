@@ -690,7 +690,7 @@ const stage = new Stage([recommendProcess, askProcess], {
   ttl: sessionMax
 });
 const bot = new Telegraf(process.env.TELEGRAM_API); // for dev, use dev.Api
-var queryNumber;
+var queryNumber; // CHECK
 
 // Creation of server at port 8080
 server.listen(8080);
