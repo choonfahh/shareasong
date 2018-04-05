@@ -1,0 +1,4 @@
+- args:
+    sql: ALTER TABLE "bot_user" ADD COLUMN "pending_session" text NOT NULL DEFAULT
+      'undefined'
+  type: run_sql

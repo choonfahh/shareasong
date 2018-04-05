@@ -21,7 +21,7 @@
       "default": "To /join or /no to join? That's the question hmm."
     },
     "basic": {
-      "timeout": "Oh man, your session has timeout. Start again by clicking on one of the stories previously!",
+      "timeout": "Oh man, your session has timed out. Start again by clicking on one of the stories previously!",
       "default": "Start by responding to a song request from another user! Otherwise, you can also request for a song recommendation from others by typing /ask",
       "start": "Hey, I'm Charlie, your assistant to share a song with other users. Well of course, you've already knew me!"
     }

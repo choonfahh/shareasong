@@ -1,0 +1,25 @@
+- args:
+    role: anonymous
+    table: bot_user
+  type: drop_select_permission
+- args:
+    permission:
+      columns:
+      - id
+      - telegram_id
+      - first_name
+      - last_name
+      - subscribe_status
+      - waiting_list
+      - request_count
+      - recommendation_count
+      - date_joined
+      - last_active
+      - last_request_received
+      - pending_session
+      - next_request_timer
+      - pending_request
+      filter: {}
+    role: anonymous
+    table: bot_user
+  type: create_select_permission

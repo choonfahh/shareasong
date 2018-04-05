@@ -1,0 +1,24 @@
+- args:
+    role: anonymous
+    table: bot_user
+  type: drop_update_permission
+- args:
+    permission:
+      columns:
+      - date_joined
+      - first_name
+      - id
+      - last_active
+      - last_name
+      - last_request_received
+      - next_request_timer
+      - pending_request
+      - recommendation_count
+      - request_count
+      - subscribe_status
+      - telegram_id
+      - waiting_list
+      filter: {}
+    role: anonymous
+    table: bot_user
+  type: create_update_permission

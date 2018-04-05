@@ -15,12 +15,55 @@ const msg = config.reply;
 
 // process.env.DATA_WEBHOOK_URL
 
-// User properties
-var pendingSession = undefined;
-var subscribeStatus = true;
-var waitingList = false;
-var nextRequestTimer = 0;
-var pendingRequest = false;
+// JSON API request options
+const requestOptions = {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  }
+};
+
+// Execute POST request to get updated user variables at initial script
+let body = {
+  type: "select",
+  args: {
+    table: "bot_user",
+    columns: [
+      "subscribe_status",
+      "waiting_list",
+      "next_request_timer",
+      "pending_request"
+    ],
+    where: {
+      telegram_id: {
+        $eq: ctx.message.chat.id
+      }
+    }
+  }
+};
+
+requestOptions.body = JSON.stringify(body);
+fetch(process.env.DATA_WEBHOOK_URL, requestOptions)
+  .then(response => {
+    return response.json();
+  })
+  .then(result => {
+    var pendingSession = undefined;
+    if (result[0] === undefined) {
+      var subscribeStatus = true;
+      var waitingList = false;
+      var nextRequestTimer = 0;
+      var pendingRequest = false;
+    } else {
+      var subscribeStatus = result[0].subscribe_status;
+      var waitingList = result[0].waiting_list;
+      var nextRequestTimer = result[0].next_request_timer;
+      var pendingRequest = result[0].pending_request;
+    }
+  })
+  .catch(error => {
+    return console.log(`getInitialUserDetails Failed: ${error}`);
+  });
 
 // Temporal storage of JSON variables - strictly synchronous
 var queryContext = undefined;
@@ -29,13 +72,35 @@ var songArtist = undefined;
 var songExplain = undefined;
 var songDedicate = undefined;
 
-// JSON API request options
-const requestOptions = {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json"
-  }
-};
+// Send API to update pending Request
+function pendingRequestUpdate(ctx) {
+  let body = {
+    type: "update",
+    args: {
+      table: "bot_user",
+      where: {
+        telegram_id: {
+          $eq: ctx.message.chat.id
+        }
+      },
+      $set: {
+        pending_request: pendingRequest
+      }
+    }
+  };
+  requestOptions.body = JSON.stringify(body);
+  ctx.reply(``); // Workaround to ensure delivery of messages
+  fetch(process.env.DATA_WEBHOOK_URL, requestOptions)
+    .then(response => {
+      return response.json();
+    })
+    .then(result => {
+      return;
+    })
+    .catch(error => {
+      return console.log(`pendingRequestUpdate Failed: ${error}`);
+    });
+}
 
 // Send API request to get last request received
 function checkLastRequest(ctx) {
@@ -71,9 +136,10 @@ function checkLastRequest(ctx) {
     })
     .then(result => {
       pendingRequest = false;
+      pendingRequestUpdate(ctx);
       let lastRequest = result[0][0].last_request_received;
       let totalRequests = result[1].count;
-      let refreshUpdate = 1000 * 60 * 60 * 0.5; // Refreshes whether there's any new requests in one hour
+      let refreshUpdate = 1000 * 60 * 60 * 1; // Refreshes whether there's any new requests in one hour
       if (nextRequestTimer === 0) {
         if (lastRequest === totalRequests) {
           return setTimeout(checkLastRequest, refreshUpdate, ctx, lastRequest);
@@ -173,21 +239,54 @@ function deliveredRequest(ctx, lastRequest) {
     });
 }
 
+// Send API to update next Request timer
+function nextRequestTimerUpdate(ctx) {
+  let body = {
+    type: "update",
+    args: {
+      table: "bot_user",
+      where: {
+        telegram_id: {
+          $eq: ctx.message.chat.id
+        }
+      },
+      $set: {
+        next_request_timer: nextRequestTimer
+      }
+    }
+  };
+  requestOptions.body = JSON.stringify(body);
+  ctx.reply(``); // Workaround to ensure delivery of messages
+  fetch(process.env.DATA_WEBHOOK_URL, requestOptions)
+    .then(response => {
+      return response.json();
+    })
+    .then(result => {
+      return;
+    })
+    .catch(error => {
+      return console.log(`subscribeUpdate Failed: ${error}`);
+    });
+}
+
 // Request ping to user
 function request(ctx, requestContent, lastRequest) {
-  nextRequestTimer = 2;
+  nextRequestTimer = 24;
   pendingRequest = true;
-  let newRequest = 1000 * 60 * 60 * 2; // User receives new request after 1 day
-  let countdownDecrement = 1000 * 60 * 60 * 1;
+  pendingRequestUpdate(ctx);
+  let newRequest = 1000 * 60 * 60 * 24; // User receives new request after 1 day
+  let countdownDecrement = 1000 * 60 * 60 * 1; // Updates countdown every hour
   let requestCountdown = setInterval(() => {
     nextRequestTimer--;
+    nextRequestTimerUpdate(ctx);
     if (nextRequestTimer === 0) {
       clearInterval(requestCountdown);
     }
   }, countdownDecrement);
   ctx.reply(``); // Workaround to ensure delivery of messages
   return (
-    ctx.reply(
+    ctx
+      .reply(
         `Hey ${ctx.message.chat.first_name} there's an incoming song request!`
       )
       .then(() => {
@@ -616,8 +715,9 @@ askProcess.on(`message`, ctx => {
 // Bot, server, stage initialized
 let sessionMax = 60 * 5; // recommendProcess lasts for 5 minutes max.
 const server = express();
-const stage = new Stage([recommendProcess, askProcess], { ttl:
-  sessionMax });
+const stage = new Stage([recommendProcess, askProcess], {
+  ttl: sessionMax
+});
 const bot = new Telegraf(process.env.TELEGRAM_API); // for dev, use dev.Api
 var queryNumber = 0;
 
@@ -656,8 +756,13 @@ bot.command(`unsub`, ctx => {
   unsubscribe(ctx);
 });
 
-bot.command(`request`, ctx => {
-  ctx.reply(`${nextRequestTimer}`);
+// Easy access variable changes
+bot.command(`variables`, ctx => {
+  ctx.reply(`subscribe_status: ${subscribeStatus}`);
+  ctx.reply(`waiting_list: ${waitingList}`);
+  ctx.reply(`next_request_timer: ${nextRequestTimer}`);
+  ctx.reply(`pending_request: ${pendingRequest}`);
+  ctx.reply(`pending_session: ${pendingSession}`);
 });
 
 // Redirect to start of recommendationProcess

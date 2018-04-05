@@ -1,0 +1,4 @@
+- args:
+    sql: ALTER TABLE "bot_user" ADD COLUMN "next_request_timer" integer NOT NULL DEFAULT
+      0
+  type: run_sql
