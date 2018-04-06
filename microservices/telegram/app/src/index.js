@@ -31,6 +31,7 @@ var nextRequestTimer;
 var pendingRequest;
 
 // Temporal storage of JSON variables - strictly synchronous
+var queryNumber;
 var queryContext;
 var songName;
 var songArtist;
@@ -269,6 +270,7 @@ function request(ctx, requestContent, lastRequest) {
 
 // User indicates to start recommendProcess
 function create(ctx) {
+  queryNumber = ctx.callbackQuery.message.message_id;
   queryContext = ctx.callbackQuery.message.text.split("\n\n")[0];
   subscribeStatus = true;
   return (
@@ -690,7 +692,6 @@ const stage = new Stage([recommendProcess, askProcess], {
   ttl: sessionMax
 });
 const bot = new Telegraf(process.env.TELEGRAM_API); // for dev, use dev.Api
-var queryNumber; // CHECK
 
 // Creation of server at port 8080
 server.listen(8080);

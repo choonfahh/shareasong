@@ -1,7 +1,6 @@
+clusters:
 - alias: hasura
-  config:
-    configmap: controller-conf
-    namespace: hasura
   data: null
-  kubeContext: fusee48
-  name: fusee48
+  infra:
+    provider: hasura-free
+version: v1
