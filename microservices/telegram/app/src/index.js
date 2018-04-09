@@ -27,7 +27,7 @@ const requestOptions = {
 var pendingSession;
 var subscribeStatus;
 var waitingList;
-var nextRequestTimer;
+var nextRequestTimer = 0;
 var pendingRequest;
 
 // Temporal storage of JSON variables - strictly synchronous
