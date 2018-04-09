@@ -25,7 +25,7 @@ const requestOptions = {
 
 // Declaration of user variables
 var pendingSession;
-var subscribeStatus;
+var subscribeStatus = true;
 var waitingList;
 var nextRequestTimer = 0;
 var pendingRequest;
@@ -95,14 +95,13 @@ function checkLastRequest(ctx) {
   };
 
   requestOptions.body = JSON.stringify(body);
-  ctx.reply(`hi`); // Workaround to ensure delivery of messages
+  ctx.reply(``); // Workaround to ensure delivery of messages
   fetch(process.env.DATA_WEBHOOK_URL, requestOptions)
     .then(response => {
       return response.json();
     })
     .then(result => {
       pendingRequest = false;
-      ctx.reply(result);
       pendingRequestUpdate(ctx);
       let lastRequest = result[0][0].last_request_received;
       let totalRequests = result[1].count;
