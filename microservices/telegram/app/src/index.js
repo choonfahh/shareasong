@@ -237,7 +237,8 @@ function nextRequestTimerUpdate(ctx) {
 
 // Request ping to user
 function request(ctx, requestContent, lastRequest) {
-  nextRequestTimer = 24 / 0.5;
+  nextRequestTimer = 48;
+  ctx.reply(``); // Workaround to ensure delivery of messages
   pendingRequest = true;
   pendingRequestUpdate(ctx);
   let newRequest = 1000 * 60 * 60 * 24; // User receives new request after 1 day
@@ -249,7 +250,6 @@ function request(ctx, requestContent, lastRequest) {
       clearInterval(requestCountdown);
     }
   }, countdownDecrement);
-  ctx.reply(``); // Workaround to ensure delivery of messages
   return (
     ctx
       .reply(
