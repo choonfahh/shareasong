@@ -105,7 +105,7 @@ function checkLastRequest(ctx) {
       pendingRequestUpdate(ctx);
       let lastRequest = result[0][0].last_request_received;
       let totalRequests = result[1].count;
-      let refreshUpdate = 1000 * 60 * 60 * 1; // Refreshes whether there's any new requests in one hour
+      let refreshUpdate = 1000 * 60 * 60 * 0.5; // Refreshes whether there's any new requests in one hour
       if (nextRequestTimer === 0) {
         if (lastRequest === totalRequests) {
           return setTimeout(checkLastRequest, refreshUpdate, ctx, lastRequest);
@@ -237,11 +237,11 @@ function nextRequestTimerUpdate(ctx) {
 
 // Request ping to user
 function request(ctx, requestContent, lastRequest) {
-  nextRequestTimer = 24;
+  nextRequestTimer = 24 / 0.5;
   pendingRequest = true;
   pendingRequestUpdate(ctx);
   let newRequest = 1000 * 60 * 60 * 24; // User receives new request after 1 day
-  let countdownDecrement = 1000 * 60 * 60 * 1; // Updates countdown every hour
+  let countdownDecrement = 1000 * 60 * 60 * 0.5; // Updates countdown every hour
   let requestCountdown = setInterval(() => {
     nextRequestTimer--;
     nextRequestTimerUpdate(ctx);
@@ -713,6 +713,11 @@ bot.use(stage.middleware());
 // Upon bot start
 bot.start(ctx => {
   checkUser(ctx);
+});
+
+// FOR INTERNAL TESTING
+bot.command(`restart`, ctx => {
+  checkLastRequest(ctx);
 });
 
 // User enters the asking process
