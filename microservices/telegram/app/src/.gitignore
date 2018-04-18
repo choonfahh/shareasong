@@ -14,5 +14,4 @@ yarn.lock
 
 # Development files
 test.js
-testJson.js
 development.json

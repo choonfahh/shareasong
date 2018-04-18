@@ -23,110 +23,33 @@ const requestOptions = {
   }
 };
 
-// Declaration of user variables
-var pendingSession;
-var subscribeStatus = true;
-var waitingList;
-var nextRequestTimer = 0;
-var pendingRequest;
-
-// Temporal storage of JSON variables - strictly synchronous
-var queryNumber;
-var queryContext;
-var songName;
-var songArtist;
-var songExplain;
-var songDedicate;
-
-// Send API to update pending Request
-function pendingRequestUpdate(ctx) {
+// Count how many requests there are in the database and start process of sending
+function requestCount() {
   let body = {
-    type: "update",
+    type: "count",
     args: {
-      table: "bot_user",
-      where: {
-        telegram_id: {
-          $eq: ctx.message.chat.id
-        }
-      },
-      $set: {
-        pending_request: pendingRequest
-      }
+      table: "request"
     }
   };
+
   requestOptions.body = JSON.stringify(body);
-  ctx.reply(``); // Workaround to ensure delivery of messages
   fetch(process.env.DATA_WEBHOOK_URL, requestOptions)
     .then(response => {
       return response.json();
     })
     .then(result => {
-      return;
-    })
-    .catch(error => {
-      return console.log(`pendingRequestUpdate Failed: ${error}`);
-    });
-}
-
-// Send API request to get last request received
-function checkLastRequest(ctx) {
-  let body = {
-    type: "bulk",
-    args: [
-      {
-        type: "select",
-        args: {
-          table: "bot_user",
-          columns: ["last_request_received"],
-          where: {
-            telegram_id: {
-              $eq: ctx.message.chat.id
-            }
-          }
-        }
-      },
-      {
-        type: "count",
-        args: {
-          table: "request"
-        }
-      }
-    ]
-  };
-
-  requestOptions.body = JSON.stringify(body);
-  ctx.reply(``); // Workaround to ensure delivery of messages
-  fetch(process.env.DATA_WEBHOOK_URL, requestOptions)
-    .then(response => {
-      return response.json();
-    })
-    .then(result => {
-      pendingRequest = false;
-      pendingRequestUpdate(ctx);
-      let lastRequest = result[0][0].last_request_received;
-      let totalRequests = result[1].count;
-      let refreshUpdate = 1000 * 60 * 60 * 0.5; // Refreshes whether there's any new requests in one hour
-      if (nextRequestTimer === 0) {
-        if (lastRequest === totalRequests) {
-          return setTimeout(checkLastRequest, refreshUpdate, ctx, lastRequest);
-        } else {
-          if (subscribeStatus) {
-            return getRequest(ctx, lastRequest);
-          } else {
-            return;
-          }
-        }
-      } else {
-        return;
+      let total = result.count;
+      for (requestNumber = 1; requestNumber <= total; requestNumber++) {
+        getRequest(requestNumber);
       }
     })
     .catch(error => {
-      return console.log(`checkLastRequest Failed: ${error}`);
+      return console.log(`requestCount Failed: ${error}`);
     });
 }
 
-// Send API request to get request details
-function getRequest(ctx, lastRequest) {
+// Get request content
+function getRequest(requestNumber) {
   let body = {
     type: "select",
     args: {
@@ -134,29 +57,96 @@ function getRequest(ctx, lastRequest) {
       columns: ["content"],
       where: {
         id: {
-          $eq: lastRequest + 1
+          $eq: requestNumber
         }
       }
     }
   };
 
   requestOptions.body = JSON.stringify(body);
-  ctx.reply(``); // Workaround to ensure delivery of messages
   fetch(process.env.DATA_WEBHOOK_URL, requestOptions)
     .then(response => {
       return response.json();
     })
     .then(result => {
-      let requestContent = result[0].content;
-      return request(ctx, requestContent, lastRequest);
+      let content = result[0].content;
+      sendRequest(requestNumber, content);
     })
     .catch(error => {
       return console.log(`getRequest Failed: ${error}`);
     });
 }
 
-// Send API request to update successful request delivery
-function deliveredRequest(ctx, lastRequest) {
+// Send request to users who are supposed to receive it
+function sendRequest(requestNumber, content) {
+  let body = {
+    type: "select",
+    args: {
+      table: "bot_user",
+      columns: ["telegram_id", "first_name", "last_name"],
+      where: {
+        $and: [
+          {
+            telegram_id: {
+              $gte: "0"
+            }
+          },
+          {
+            last_request_received: {
+              $eq: requestNumber - 1
+            }
+          }
+        ]
+      }
+    }
+  };
+
+  requestOptions.body = JSON.stringify(body);
+  fetch(process.env.DATA_WEBHOOK_URL, requestOptions)
+    .then(response => {
+      return response.json();
+    })
+    .then(result => {
+      if (result.length !== 0) {
+        for (selectedUser = 0; selectedUser < result.length; selectedUser++) {
+          let userId = result[selectedUser].telegram_id;
+          return bot.telegram
+            .sendMessage(
+              userId,
+              `Hey ${
+                result[selectedUser].first_name
+              } there's an incoming song request!`
+            )
+            .then(() => {
+              bot.telegram.sendMessage(
+                userId,
+                `${content}\n\n<b>Would you like to recommend a song?</b>`,
+                {
+                  parse_mode: "HTML",
+                  reply_markup: {
+                    inline_keyboard: [
+                      [
+                        {
+                          text: msg.recommend.intent,
+                          callback_data: `create-reply`
+                        }
+                      ]
+                    ]
+                  }
+                }
+              );
+            })
+            .then(deliveredRequest(requestNumber, userId));
+        }
+      }
+    })
+    .catch(error => {
+      return console.log(`sendRequest Failed: ${error}`);
+    });
+}
+
+// Update backend after request is delivered
+function deliveredRequest(requestNumber, userId) {
   let body = {
     type: "bulk",
     args: [
@@ -166,7 +156,7 @@ function deliveredRequest(ctx, lastRequest) {
           table: "request",
           where: {
             id: {
-              $eq: lastRequest + 1
+              $eq: requestNumber
             }
           },
           $inc: {
@@ -180,7 +170,7 @@ function deliveredRequest(ctx, lastRequest) {
           table: "bot_user",
           where: {
             telegram_id: {
-              $eq: ctx.message.chat.id
+              $eq: userId
             }
           },
           $inc: {
@@ -192,7 +182,6 @@ function deliveredRequest(ctx, lastRequest) {
   };
 
   requestOptions.body = JSON.stringify(body);
-  ctx.reply(``); // Workaround to ensure delivery of messages
   fetch(process.env.DATA_WEBHOOK_URL, requestOptions)
     .then(response => {
       return response.json();
@@ -205,76 +194,13 @@ function deliveredRequest(ctx, lastRequest) {
     });
 }
 
-// Send API to update next Request timer
-function nextRequestTimerUpdate(ctx) {
-  let body = {
-    type: "update",
-    args: {
-      table: "bot_user",
-      where: {
-        telegram_id: {
-          $eq: ctx.message.chat.id
-        }
-      },
-      $set: {
-        next_request_timer: nextRequestTimer
-      }
-    }
-  };
-  requestOptions.body = JSON.stringify(body);
-  ctx.reply(``); // Workaround to ensure delivery of messages
-  fetch(process.env.DATA_WEBHOOK_URL, requestOptions)
-    .then(response => {
-      return response.json();
-    })
-    .then(result => {
-      return;
-    })
-    .catch(error => {
-      return console.log(`subscribeUpdate Failed: ${error}`);
-    });
-}
-
-// Request ping to user
-function request(ctx, requestContent, lastRequest) {
-  nextRequestTimer = 48;
-  ctx.reply(``); // Workaround to ensure delivery of messages
-  pendingRequest = true;
-  pendingRequestUpdate(ctx);
-  let newRequest = 1000 * 60 * 60 * 24; // User receives new request after 1 day
-  let countdownDecrement = 1000 * 60 * 60 * 0.5; // Updates countdown every hour
-  let requestCountdown = setInterval(() => {
-    nextRequestTimer--;
-    nextRequestTimerUpdate(ctx);
-    if (nextRequestTimer === 0) {
-      clearInterval(requestCountdown);
-    }
-  }, countdownDecrement);
-  return (
-    ctx
-      .reply(
-        `Hey ${ctx.message.chat.first_name} there's an incoming song request!`
-      )
-      .then(() => {
-        return ctx.replyWithHTML(
-          `${requestContent}\n\n<b>Would you like to recommend a song?</b>`,
-          Markup.inlineKeyboard([
-            Markup.callbackButton(msg.recommend.intent, `create-reply`)
-          ]).extra()
-        );
-      })
-      .then(deliveredRequest(ctx, lastRequest)),
-    setTimeout(checkLastRequest, newRequest, ctx)
-  );
-}
-
 // User indicates to start recommendProcess
 function create(ctx) {
-  queryNumber = ctx.callbackQuery.message.message_id;
-  queryContext = ctx.callbackQuery.message.text.split("\n\n")[0];
-  subscribeStatus = true;
+  ctx.reply(``); // Workaround to ensure delivery of messages
+  ctx.state.queryNumber = ctx.callbackQuery.message.message_id;
+  ctx.state.queryContext = ctx.callbackQuery.message.text.split("\n\n")[0];
   return (
-    ctx.answerCbQuery(msg.recommend.create),
+    ctx.answerCbQuery(msg.recommend.start),
     ctx.scene.enter(`recommend-process`)
   );
 }
@@ -288,30 +214,36 @@ function cancel(ctx) {
 function redo(ctx) {
   return (
     ctx.wizard.selectStep(1),
-    ctx.reply(msg.recommend.select, Extra.inReplyTo(queryNumber))
+    ctx.reply(
+      msg.recommend.select,
+      Extra.inReplyTo(ctx.scene.state.queryNumber)
+    )
   );
 }
 
 // User select song for recommendProcess
 function select(ctx) {
-  pendingSession = ctx.scene.session.current;
+  ctx.scene.state.queryNumber = ctx.state.queryNumber;
+  ctx.scene.state.queryContext = ctx.state.queryContext;
   return (
-    ctx.reply(msg.recommend.select, Extra.inReplyTo(queryNumber)),
+    ctx.reply(
+      msg.recommend.select,
+      Extra.inReplyTo(ctx.scene.state.queryNumber)
+    ),
     ctx.wizard.next()
   );
 }
 
 // User explain song for recommendProcess
 function explain(ctx) {
-  let songRaw = ctx.message.text;
-  songName = songRaw.split("-")[0];
-  songArtist = songRaw.split("-")[1];
+  ctx.scene.state.songName = ctx.message.text.split("-")[0];
+  ctx.scene.state.songArtist = ctx.message.text.split("-")[1];
   return ctx.reply(msg.recommend.explain), ctx.wizard.next();
 }
 
 // User dedicates song for recommendProcess
 function dedicate(ctx) {
-  songExplain = ctx.message.text;
+  ctx.scene.state.songExplain = ctx.message.text;
   return ctx.reply(msg.recommend.dedicate), ctx.wizard.next();
 }
 
@@ -333,7 +265,7 @@ function deliverOne(ctx) {
           ],
           where: {
             content: {
-              $eq: queryContext
+              $eq: ctx.scene.state.queryContext
             }
           }
         }
@@ -382,11 +314,11 @@ function deliverTwo(ctx, requestId, recipient, userId) {
           table: "recommendation",
           objects: [
             {
-              song: songName,
-              artist: songArtist,
+              song: ctx.scene.state.songName,
+              artist: ctx.scene.state.songArtist,
               request_id: requestId,
-              explanation: songExplain,
-              dedication: songDedicate,
+              explanation: ctx.scene.state.songExplain,
+              dedication: ctx.scene.state.songDedicate,
               user_id: userId
             }
           ]
@@ -440,11 +372,11 @@ function deliverTwo(ctx, requestId, recipient, userId) {
 
 // send delivered message, validation, next request
 function deliverThree(ctx, recipient) {
-  pendingSession = undefined;
+  let subscribeStatus = true;
   let responseTime = 1000 * 60 * 7; // User receives validation response after 7 mins
-  ctx.reply(``); // Workaround to ensure delivery of messages
   return (
     ctx.reply(msg.recommend.deliver),
+    subscribeUpdate(ctx, subscribeStatus),
     setTimeout(() => {
       return ctx.reply(`${recipient} really loved your recommendation!`);
     }, responseTime),
@@ -454,12 +386,6 @@ function deliverThree(ctx, recipient) {
 
 // Send API request to create new user inside bot_user
 function createUser(ctx) {
-  pendingSession = undefined;
-  subscribeStatus = true;
-  waitingList = false;
-  nextRequestTimer = 0;
-  pendingRequest = false;
-
   let body = {
     type: "insert",
     args: {
@@ -481,7 +407,7 @@ function createUser(ctx) {
       return response.json();
     })
     .then(result => {
-      return checkLastRequest(ctx);
+      return ctx.reply(msg.basic.welcome);
     })
     .catch(error => {
       return console.log(`createUser Failed: ${error}`);
@@ -522,7 +448,7 @@ function checkUser(ctx) {
 }
 
 // Send API to update subscribe status
-function subscribeUpdate(ctx) {
+function subscribeUpdate(ctx, subscribeStatus) {
   let body = {
     type: "update",
     args: {
@@ -555,32 +481,15 @@ function subscribeUpdate(ctx) {
 // User subs to request pings; sub on by default
 function subscribe(ctx) {
   ctx.reply(``); // Workaround to ensure delivery of messages
-  if (subscribeStatus) {
-    return ctx.reply(msg.recommend.subExist);
-  } else {
-    if (pendingRequest) {
-      subscribeStatus = true;
-      return subscribeUpdate(ctx), ctx.reply(msg.recommend.sub);
-    } else {
-      subscribeStatus = true;
-      return (
-        subscribeUpdate(ctx),
-        checkLastRequest(ctx),
-        ctx.reply(msg.recommend.sub)
-      );
-    }
-  }
+  let subscribeStatus = true;
+  return subscribeUpdate(ctx, subscribeStatus), ctx.reply(msg.recommend.sub);
 }
 
 // User unsubs to request pings
 function unsubscribe(ctx) {
   ctx.reply(``); // Workaround to ensure delivery of messages
-  if (subscribeStatus) {
-    subscribeStatus = false;
-    return subscribeUpdate(ctx), ctx.reply(msg.recommend.unsub);
-  } else {
-    return ctx.reply(msg.recommend.unsubExist);
-  }
+  let subscribeStatus = false;
+  return subscribeUpdate(ctx, subscribeStatus), ctx.reply(msg.recommend.unsub);
 }
 
 // recommendProcess scenes
@@ -602,13 +511,11 @@ const recommendProcess = new WizardScene(
 
 // User cancels current input
 recommendProcess.command(`cancel`, ctx => {
-  pendingSession = undefined;
   cancel(ctx);
 });
 
 // User unsubs during recommendProcess
 recommendProcess.command(`unsub`, ctx => {
-  pendingSession = undefined;
   cancel(ctx);
   unsubscribe(ctx);
 });
@@ -630,7 +537,7 @@ const askProcess = new Scene(`ask-process`);
 askProcess.enter(ctx => ctx.reply(msg.ask.intent));
 
 // Send API to update subscribe status
-function waitingUpdate(ctx) {
+function waitingUpdate(ctx, waitingStatus) {
   let body = {
     type: "update",
     args: {
@@ -641,7 +548,7 @@ function waitingUpdate(ctx) {
         }
       },
       $set: {
-        waiting_list: waitingList
+        waiting_list: waitingStatus
       },
       $default: ["last_active"]
     }
@@ -662,22 +569,22 @@ function waitingUpdate(ctx) {
 
 // User indicates to join the waiting list
 askProcess.command(`join`, ctx => {
-  if (waitingList) {
-    return ctx.reply(msg.ask.joinExist), ctx.scene.leave();
-  } else {
-    waitingList = true;
-    return waitingUpdate(ctx), ctx.reply(msg.ask.join), ctx.scene.leave();
-  }
+  let waitingStatus = true;
+  return (
+    waitingUpdate(ctx, waitingStatus),
+    ctx.reply(msg.ask.join),
+    ctx.scene.leave()
+  );
 });
 
 // User declines to join the waiting list
 askProcess.command(`no`, ctx => {
-  if (!waitingList) {
-    return ctx.reply(msg.ask.decline), ctx.scene.leave();
-  } else {
-    waitingList = false;
-    return waitingUpdate(ctx), ctx.reply(msg.ask.decline), ctx.scene.leave();
-  }
+  let waitingStatus = false;
+  return (
+    waitingUpdate(ctx, waitingStatus),
+    ctx.reply(msg.ask.decline),
+    ctx.scene.leave()
+  );
 });
 
 // Only accepts two commands inside the process
@@ -686,8 +593,9 @@ askProcess.on(`message`, ctx => {
 });
 
 // Bot, server, stage initialized
-let sessionMax = 60 * 5; // recommendProcess lasts for 5 minutes max.
 const server = express();
+let requestFreq = 1000 * 60 * 60 * 24; // New request appears daily.
+let sessionMax = 60 * 10; // recommendProcess lasts for 10 minutes max.
 const stage = new Stage([recommendProcess, askProcess], {
   ttl: sessionMax
 });
@@ -715,11 +623,6 @@ bot.start(ctx => {
   checkUser(ctx);
 });
 
-// FOR INTERNAL TESTING
-bot.command(`restart`, ctx => {
-  checkLastRequest(ctx);
-});
-
 // User enters the asking process
 bot.command(`ask`, enter(`ask-process`));
 
@@ -733,14 +636,10 @@ bot.command(`unsub`, ctx => {
   unsubscribe(ctx);
 });
 
-// Easy access variable changes
-bot.command(`variables`, ctx => {
-  ctx.reply(`subscribe_status: ${subscribeStatus}`);
-  ctx.reply(`waiting_list: ${waitingList}`);
-  ctx.reply(`next_request_timer: ${nextRequestTimer}`);
-  ctx.reply(`pending_request: ${pendingRequest}`);
-  ctx.reply(`pending_session: ${pendingSession}`);
-});
+// Internal testing purposes
+bot.command(`version`, ctx => {
+  return ctx.reply(`This version is currently for internal testing`);
+})
 
 // Redirect to start of recommendationProcess
 bot.action(`create-reply`, ctx => {
@@ -749,13 +648,11 @@ bot.action(`create-reply`, ctx => {
 
 // No running processes in the bot
 bot.on(`message`, ctx => {
-  if (pendingSession !== ctx.scene.session.current) {
-    pendingSession = undefined;
-    return ctx.reply(msg.basic.timeout);
-  } else {
-    return ctx.reply(msg.basic.default);
-  }
+  return ctx.reply(msg.basic.default);
 });
 
 // Bot activated
 bot.startPolling();
+
+// Daily request notif refresh
+setInterval(requestCount, requestFreq);
