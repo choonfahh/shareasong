@@ -23,6 +23,28 @@ const requestOptions = {
   }
 };
 
+// Keep server from sleeping after 1 hour
+function preventSleep() {
+  let body = {
+    type: "count",
+    args: {
+      table: "bot_user"
+    }
+  };
+
+  requestOptions.body = JSON.stringify(body);
+  fetch(process.env.DATA_WEBHOOK_URL, requestOptions)
+    .then(response => {
+      return response.json();
+    })
+    .then(result => {
+      return bot.telegram.sendMessage(61872001, `The server never sleeps!`);
+    })
+    .catch(error => {
+      return console.log(`requestCount Failed: ${error}`);
+    });
+}
+
 // Count how many requests there are in the database and start process of sending
 function requestCount() {
   let body = {
@@ -595,6 +617,7 @@ askProcess.on(`message`, ctx => {
 // Bot, server, stage initialized
 const server = express();
 let requestFreq = 1000 * 60 * 60 * 24; // New request appears daily.
+let refreshFreq = 1000 * 60 * 15; // 15 mins refresh
 let sessionMax = 60 * 10; // recommendProcess lasts for 10 minutes max.
 const stage = new Stage([recommendProcess, askProcess], {
   ttl: sessionMax
@@ -656,3 +679,6 @@ bot.startPolling();
 
 // Daily request notif refresh
 setInterval(requestCount, requestFreq);
+
+// Prevent server from sleeping
+setInterval(preventSleep, refreshFreq);
