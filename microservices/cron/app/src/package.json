@@ -1,13 +1,12 @@
 {
-  "name": "ShareASong - Telegram",
+  "name": "ShareASong - Cron",
   "version": "1.0.0",
   "main": "index.js",
   "author": "Fah",
   "license": "MIT",
   "dependencies": {
-    "express": "^4.16.3",
-    "node-fetch": "^2.1.2",
-    "telegraf": "^3.19.0"
+    "cron": "^1.3.0",
+    "node-fetch": "^2.1.2"
   },
   "scripts": {
     "start": "node index.js",

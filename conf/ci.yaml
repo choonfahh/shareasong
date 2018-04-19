@@ -24,3 +24,9 @@ remotes:
         dockerfile: microservices/telegram/Dockerfile
         path: microservices/telegram
 
+
+    '{{ cluster.metadata.namespaces.user }}.cron':
+      cron:
+        dockerfile: microservices/cron/Dockerfile
+        path: microservices/cron
+

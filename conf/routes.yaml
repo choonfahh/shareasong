@@ -240,3 +240,14 @@ telegram:
     upstreamServicePort: 80
 
 
+
+cron:
+  /:
+    corsPolicy: allow_all
+    upstreamService:
+      name: cron
+      namespace: '{{ cluster.metadata.namespaces.user }}'
+    upstreamServicePath: /
+    upstreamServicePort: 80
+
+
